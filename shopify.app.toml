@@ -17,7 +17,7 @@ api_version = "2026-10"
 scopes = "read_products,write_products,write_metaobjects,write_metaobject_definitions,write_discounts,read_price_rules,write_price_rules,read_customers,write_app_proxy"
 
 [auth]
-redirect_urls = [ "https://archives54-offer-app.vercel.app/api/auth" ]
+redirect_urls = [ "https://archives54-offer-app.vercel.app/api/auth/callback" ]
 
 [app_proxy]
 url = "/api"
