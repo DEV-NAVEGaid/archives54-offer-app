@@ -1,0 +1,25 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "283349ad115871f807a163b8f454c427"
+name = "archives54-offer-apps"
+application_url = "https://basically-lower-necessary-disabilities.trycloudflare.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "navegaid.myshopify.com"
+
+[webhooks]
+api_version = "2026-10"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products,write_metaobjects,write_metaobject_definitions,write_discounts,read_price_rules,write_price_rules,read_customers,write_app_proxy"
+
+[auth]
+redirect_urls = [ "https://basically-lower-necessary-disabilities.trycloudflare.com/api/auth" ]
+
+[app_proxy]
+url = "/api"
+subpath = "archives54-offer-app"
+prefix = "apps"
