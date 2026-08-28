@@ -1,0 +1,1058 @@
+<!-- ══ INLINE: DEFAULT ══ -->
+<div id="a54-widget-default-{{ block.id }}" style="display:none; border:1px solid #C9A96E; padding:20px; margin-bottom:12px; background:rgba(201,169,110,0.04);">
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="1.5">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+      <circle cx="7" cy="7" r="1" fill="#C9A96E"/>
+    </svg>
+    <div style="flex:1; min-width:0;">
+      <span style="display:block; font-size:13px; font-weight:700; color:#1A1A1A; letter-spacing:0.3px;">Noch weniger zahlen?</span>
+      <span style="display:block; font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#C9A96E; margin-top:1px;">Preisverhandlung &middot; Regelbasiert</span>
+    </div>
+    <!-- Quota dots -->
+    {% if customer or request.design_mode %}
+    <div id="a54-quota-badge-{{ block.id }}" style="display:flex; align-items:center; gap:3px; flex-shrink:0;"></div>
+    {% endif %}
+  </div>
+
+  <p style="font-size:13px; color:#6B6B6B; line-height:1.6; margin:0 0 16px;">
+    Machen Sie ein Angebot und verhandeln Sie Ihren pers&ouml;nlichen Preis &mdash; in Sekunden.
+  </p>
+
+  <div id="a54-default-caption-{{ block.id }}" style="display:none; padding:10px 12px; background:rgba(201,169,110,0.1); border-left:3px solid #C9A96E; margin-bottom:14px; font-size:12px; color:#1A1A1A;">
+  </div>
+
+
+  {% if customer or request.design_mode %}
+    <button
+      id="btn-angebot-machen-{{ block.id }}"
+      onclick="a54OpenModal('{{ block.id }}')"
+      style="width:100%; padding:16px; background:#C9A96E; color:#0A0A0A; border:none; font-family:'Inter',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:400; cursor:pointer; transition:all 0.3s; display:flex; align-items:center; justify-content:center; gap:10px;"
+      onmouseover="this.style.background='#D4B87D'"
+      onmouseout="this.style.background='#C9A96E'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+        <circle cx="7" cy="7" r="1" fill="currentColor"/>
+      </svg>
+      Angebot machen
+      {% unless customer %}
+        <span style="font-size:9px; letter-spacing:1px; background:rgba(0,0,0,0.15); padding:2px 6px; border-radius:2px; margin-left:4px;">PREVIEW</span>
+      {% endunless %}
+    </button>
+  {% else %}
+    <button disabled style="width:100%; padding:16px; background:#E5E5E5; color:#999999; border:none; font-family:'Inter',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:400; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:10px;">
+      Angebot machen
+    </button>
+    <div style="display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 12px; background:#F5F5F3;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6B6B" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0112 0v1"/></svg>
+      <span style="font-size:11px; color:#6B6B6B;">Zum Verhandeln bitte </span>
+      <a href="{{ routes.account_login_url }}" style="font-size:11px; color:#C9A96E; font-weight:600; text-decoration:underline;">einloggen</a>
+      <span style="font-size:11px; color:#6B6B6B;"> oder </span>
+      <a href="{{ routes.account_register_url }}" style="font-size:11px; color:#C9A96E; font-weight:600; text-decoration:underline;">registrieren</a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- ══ INLINE: ACCEPTED ══ -->
+<div id="a54-widget-accepted-{{ block.id }}" style="display:none; border:1px solid #C9A96E; padding:20px; margin-bottom:12px; background:#1A1A1A; color:#C9A96E; border-radius:4px;">
+  
+  <!-- Header: Checkmark + Text (Left), Timer (Right) -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="2">
+        <path d="M5 13l4 4L19 7"/>
+      </svg>
+      <span style="font-size:16px; font-weight:600; color:#C9A96E;">Angebot angenommen</span>
+    </div>
+    <div id="a54-countdown-{{ block.id }}" style="font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; color:#C9A96E;">
+      --:--
+    </div>
+  </div>
+
+  <!-- Price: New Price statt Old Price -->
+  <div style="font-size:14px; color:#C9A96E; margin-bottom:16px;">
+    <span id="a54-accepted-amount-{{ block.id }}" style="font-weight:600;"></span>
+    <span> statt <s style="opacity:0.7;">{{ product.selected_or_first_available_variant.compare_at_price | default: product.price | money }}</s></span>
+  </div>
+
+  <!-- Discount Code Copy Box -->
+  <div id="a54-discount-box-{{ block.id }}" style="display:flex; align-items:center; justify-content:space-between; background:rgba(201,169,110,0.1); border:1px dashed #C9A96E; padding:10px 12px; margin-bottom:16px; border-radius:4px;">
+    <div>
+      <span style="font-size:10px; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:2px; opacity:0.8; color:#C9A96E;">Ihr Rabattcode</span>
+      <span id="a54-discount-code-{{ block.id }}" style="font-size:16px; font-weight:700; font-family:monospace; letter-spacing:2px; color:#C9A96E;">A54-XXXXXX</span>
+    </div>
+    <button title="In die Zwischenablage kopieren" onclick="a54CopyCode('{{ block.id }}')" style="background:none; border:none; color:#C9A96E; cursor:pointer; display:flex; align-items:center; gap:6px; padding:6px; outline:none; transition:opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+      <span id="a54-copy-icon-{{ block.id }}" style="display:flex;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      </span>
+      <span id="a54-copy-text-{{ block.id }}" style="font-size:11px; font-weight:600; text-transform:uppercase;">Kopieren</span>
+    </button>
+  </div>
+
+  <!-- Button -->
+  <button onclick="a54AcceptDeal('{{ block.id }}')"
+    style="width:100%; padding:14px; background:#FFFFFF; color:#1A1A1A; border:none; border-radius:4px; font-family:'Inter',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:background 0.3s;"
+    onmouseover="this.style.background='#F0F0F0'" onmouseout="this.style.background='#FFFFFF'">
+    Jetzt kaufen
+  </button>
+</div>
+
+<!-- ══ INLINE: EXPIRED ══ -->
+<div id="a54-widget-expired-{{ block.id }}" style="display:none; border:1px solid #E0E0E0; padding:20px; margin-bottom:12px; background:#FAFAFA;">
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    <div>
+      <span style="display:block; font-size:13px; font-weight:700; color:#6B6B6B; letter-spacing:0.3px;">Angebot abgelaufen</span>
+      <span style="display:block; font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#9E9E9E; margin-top:1px;">Zeitfenster verstrichen</span>
+    </div>
+  </div>
+  <div style="padding:10px 12px; background:#F0F0F0; margin-bottom:14px;">
+    <p style="font-size:12px; color:#6B6B6B; margin:0; line-height:1.6;">
+      Das akzeptierte Angebot von <strong id="a54-expired-amount-{{ block.id }}" style="color:#1A1A1A;"></strong> ist leider abgelaufen.
+    </p>
+  </div>
+  <button onclick="a54ResetToDefault('{{ block.id }}')"
+    style="width:100%; padding:16px; background:#C9A96E; color:#0A0A0A; border:none; font-family:'Inter',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600; cursor:pointer; transition:all 0.3s;"
+    onmouseover="this.style.background='#D4B87D'" onmouseout="this.style.background='#C9A96E'">
+    Neues Angebot machen
+  </button>
+</div>
+
+<!-- ══ INLINE: QUOTA FULL ══ -->
+<div id="a54-widget-quota-full-{{ block.id }}" style="display:none; border:1px solid #E0E0E0; padding:20px; margin-bottom:12px; background:#FAFAFA;">
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+      </svg>
+      <div>
+        <span style="display:block; font-size:13px; font-weight:700; color:#1A1A1A; letter-spacing:0.3px;">Tageslimit erreicht</span>
+        <span style="display:block; font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:#9E9E9E; margin-top:1px;">4 / 4 Angebote heute</span>
+      </div>
+    </div>
+    
+    <div style="display:flex; align-items:center; gap:6px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <span style="font-size:11px; color:#9E9E9E; display:flex; flex-direction:column; align-items:flex-end;">Zur&uuml;cksetzen in: <span id="a54-quota-reset-{{ block.id }}" style="font-weight:700; color:#6B6B6B;"></span></span>
+    </div>
+  </div>
+
+  <!-- Quota dots full -->
+  <div style="display:flex; gap:4px; margin-bottom:12px;">
+    <span style="width:28px; height:4px; background:#C9A96E; border-radius:2px;"></span>
+    <span style="width:28px; height:4px; background:#C9A96E; border-radius:2px;"></span>
+    <span style="width:28px; height:4px; background:#C9A96E; border-radius:2px;"></span>
+    <span style="width:28px; height:4px; background:#C9A96E; border-radius:2px;"></span>
+  </div>
+
+  <div style="padding:12px; background:#F5F5F3; margin-bottom:14px;">
+    <p style="font-size:12px; color:#6B6B6B; margin:0; line-height:1.6;">
+      Sie haben Ihr t&auml;gliches Limit von <strong style="color:#1A1A1A;">4 Preisverhandlungen</strong> erreicht. Morgen k&ouml;nnen Sie wieder neue Angebote einreichen.
+    </p>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════ -->
+<!--          OFFER MODAL              -->
+<!-- ══════════════════════════════════ -->
+{% if customer or request.design_mode %}
+<style>
+  @keyframes a54-fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes a54-slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes a54-spin { to{transform:rotate(360deg)} }
+  #offer-modal-{{ block.id }} { animation:a54-fadeIn 0.2s ease; }
+  #offer-modal-{{ block.id }} .a54-modal-inner { animation:a54-slideUp 0.25s ease; }
+  .a54-divider { height:1px; background:#E9E9E6; margin:16px 0; }
+  .a54-spin-icon { animation:a54-spin 1s linear infinite; }
+</style>
+
+<div id="offer-modal-{{ block.id }}"
+  onclick="if(event.target===this)a54CloseModal('{{ block.id }}')"
+  style="display:none; position:fixed; inset:0; background:rgba(10,10,10,0.6); z-index:10000; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+
+  <div class="a54-modal-inner" style="width:420px; max-width:100%; max-height:90vh; overflow-y:auto; background:#FFFFFF; border:1px solid #C9A96E; box-shadow:0 20px 60px rgba(0,0,0,0.25); padding:28px; position:relative; box-sizing:border-box;">
+
+    <!-- Close -->
+    <div onclick="a54CloseModal('{{ block.id }}')"
+      style="position:absolute; top:16px; right:16px; cursor:pointer; color:#6B6B6B; padding:4px; line-height:0;"
+      onmouseover="this.style.color='#1A1A1A'" onmouseout="this.style.color='#6B6B6B'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </div>
+
+    <!-- Modal header -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="1.5">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+        <circle cx="7" cy="7" r="1" fill="#C9A96E"/>
+      </svg>
+      <div style="flex:1;">
+        <span style="font-size:14px; font-weight:600; color:#1A1A1A;">Noch weniger zahlen?</span>
+      </div>
+      <!-- Quota indicator in modal -->
+      <div id="a54-modal-quota-{{ block.id }}" style="font-size:10px; letter-spacing:0.8px; color:#9E9E9E; text-align:right; white-space:nowrap;"></div>
+    </div>
+
+    <!-- Product summary -->
+    <div style="display:flex; gap:12px; align-items:center; padding:12px; background:#F5F5F3; margin-bottom:16px;">
+      <div style="width:48px; height:48px; flex-shrink:0; background:#E9E9E6; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        {% if product.featured_image %}
+          <img src="{{ product.featured_image | image_url: width: 96, height: 96, crop: 'center' }}" alt="{{ product.title | escape }}" width="48" height="48" style="width:48px; height:48px; object-fit:cover;">
+        {% else %}
+          <span style="font-family:monospace; font-size:8px; color:#6B6B6B;">IMG</span>
+        {% endif %}
+      </div>
+      <div style="min-width:0;">
+        <p style="font-size:9px; letter-spacing:1.2px; text-transform:uppercase; color:#6B6B6B; margin:0 0 2px;">{{ product.vendor }}</p>
+        <p style="font-size:13px; color:#1A1A1A; margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ product.title }}</p>
+        <p id="a54-modal-variant-title-{{ block.id }}" style="font-size:11px; color:#6B6B6B; margin:0 0 4px;"></p>
+        <p style="font-size:14px; font-weight:700; color:#1A1A1A; margin:0; font-variant-numeric:tabular-nums;">{{ product.price | money }}</p>
+      </div>
+    </div>
+
+    <p style="font-size:13px; color:#6B6B6B; line-height:1.6; margin:0 0 20px;">
+      Machen Sie ein Angebot und verhandeln Sie Ihren pers&ouml;nlichen Preis
+    </p>
+
+    <!-- ══ STATE: FORM ══ -->
+    <div id="offer-form-{{ block.id }}">
+      <p style="font-size:12px; font-weight:500; margin:0 0 8px; color:#1A1A1A;">Ihr Angebot</p>
+      <p id="a54-form-error-{{ block.id }}" style="display:none; margin:0 0 12px; padding:8px 12px; background:#FDF2F2; border-left:3px solid #D64545; font-size:12px; color:#8A2A2A;"></p>
+      <div style="display:flex; align-items:center; border:1px solid #E0E0E0; margin-bottom:16px;">
+        <span style="padding:14px 0 14px 16px; font-size:14px; color:#6B6B6B;">&euro;</span>
+        <input id="offer-amount-{{ block.id }}" type="number" min="0" placeholder="0"
+          style="flex:1; min-width:0; padding:14px 16px; border:none; outline:none; font-family:'Inter',sans-serif; font-size:14px; color:#1A1A1A; box-sizing:border-box;">
+      </div>
+      <button onclick="a54SubmitOffer('{{ block.id }}', '{{ product.id }}', '{{ customer.id }}')"
+        style="width:100%; padding:16px; background:#C9A96E; color:#0A0A0A; border:none; font-family:'Inter',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600; cursor:pointer; transition:all 0.3s;"
+        onmouseover="this.style.background='#D4B87D'" onmouseout="this.style.background='#C9A96E'">
+        Angebot senden
+      </button>
+    </div>
+
+    <!-- ══ STATE: SUBMITTED ══ -->
+    <div id="offer-submitted-{{ block.id }}" style="display:none; text-align:center; padding:20px 0 8px;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="1.2" style="margin:0 auto 12px auto; display:block;">
+        <path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/>
+      </svg>
+      <p style="font-size:14px; font-weight:600; color:#1A1A1A; margin:0 0 8px;">Angebot &uuml;bermittelt</p>
+      <p id="offer-submitted-msg-{{ block.id }}" style="font-size:13px; color:#6B6B6B; line-height:1.6; margin:0 0 20px;"></p>
+      <div style="display:flex; align-items:center; justify-content:center; gap:6px; color:#9E9E9E;">
+        <svg class="a54-spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 11-6.219-8.56" stroke-linecap="round"/>
+        </svg>
+        <span style="font-size:11px; letter-spacing:0.8px; text-transform:uppercase;">Wird gepr&uuml;ft&hellip;</span>
+      </div>
+    </div>
+
+    <!-- ══ STATE: COUNTER OFFER ══ -->
+    <div id="offer-counter-{{ block.id }}" style="display:none;">
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <div style="flex:1; padding:12px; background:#F5F5F3; text-align:center;">
+          <p style="font-size:9px; letter-spacing:1.2px; text-transform:uppercase; color:#9E9E9E; margin:0 0 4px;">Ihr Angebot</p>
+          <p id="counter-user-amount-{{ block.id }}" style="font-size:15px; font-weight:700; color:#6B6B6B; margin:0; font-variant-numeric:tabular-nums;"></p>
+        </div>
+        <div style="display:flex; align-items:center; color:#C9A96E; padding:0 4px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div style="flex:1; padding:12px; background:#1A1A1A; text-align:center;">
+          <p style="font-size:9px; letter-spacing:1.2px; text-transform:uppercase; color:#C9A96E; margin:0 0 4px;">Unser Angebot</p>
+          <p id="counter-offer-amount-{{ block.id }}" style="font-size:15px; font-weight:700; color:#FFFFFF; margin:0; font-variant-numeric:tabular-nums;"></p>
+        </div>
+      </div>
+      <p id="counter-msg-{{ block.id }}" style="font-size:12px; color:#6B6B6B; line-height:1.6; margin:0 0 20px;"></p>
+      <button onclick="a54AcceptCounter('{{ block.id }}')"
+        style="width:100%; padding:16px; background:#C9A96E; color:#0A0A0A; border:none; font-family:'Inter',sans-serif; font-size:12px; letter-spacing:2px; text-transform:uppercase; font-weight:600; cursor:pointer; transition:all 0.3s;"
+        onmouseover="this.style.background='#D4B87D'" onmouseout="this.style.background='#C9A96E'">
+        Annehmen &amp; kaufen
+      </button>
+      <p style="font-size:11px; color:#8A8A8A; text-align:center; margin:8px 0 0; line-height:1.5;">
+        Oder schlie&szlig;en Sie das Fenster, um abzulehnen.
+      </p>
+    </div>
+
+    <!-- ══ STATE: DECLINED ══ -->
+    <div id="offer-declined-{{ block.id }}" style="display:none;">
+      <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; background:#FFF5F5; border:1px solid #E8D0D0; margin-bottom:16px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C08080" stroke-width="1.5" style="flex-shrink:0;">
+          <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+        </svg>
+        <span style="font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#C08080; font-weight:600;">Angebot abgelehnt</span>
+      </div>
+      <div style="text-align:center; padding:8px 0 16px;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D8C0C0" stroke-width="1" style="margin:0 auto 12px auto; display:block;">
+          <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
+        </svg>
+        <p style="font-size:14px; font-weight:600; color:#1A1A1A; margin:0 0 6px;">Keine Einigung erzielt</p>
+        <p id="declined-msg-{{ block.id }}" style="font-size:12px; color:#6B6B6B; line-height:1.6; margin:0 0 4px;"></p>
+      </div>
+      <!-- Remaining quota notice -->
+      <div id="declined-quota-notice-{{ block.id }}" style="display:none; padding:8px 12px; background:#F5F5F3; margin-bottom:12px; font-size:11px; color:#6B6B6B; line-height:1.5;"></div>
+      <div class="a54-divider"></div>
+      <div style="display:flex; gap:8px;">
+        <button onclick="a54CloseModal('{{ block.id }}')"
+          style="width:100%; padding:14px; background:#F5F5F3; color:#1A1A1A; border:1px solid #E0E0E0; font-family:'Inter',sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer; transition:all 0.3s;"
+          onmouseover="this.style.background='#EBEBEB'" onmouseout="this.style.background='#F5F5F3'">
+          Schliessen
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /.a54-modal-inner -->
+</div><!-- /#offer-modal -->
+
+<script>
+  // ══ Config ══════════════════════════════════════════
+  var A54_QUOTA_MAX  = 4;
+  var A54_BLOCK_ID   = '{{ block.id }}';
+  var A54_CUSTOMER   = '{{ customer.id }}';
+  var A54_PRODUCT_ID = '{{ product.id }}';
+var A54_PRODUCT_AVAILABLE = {{ product.available | json }};
+  var A54_SALE_PRICE = {{ product.price | divided_by: 100.0 | round: 2 }};
+  var A54_META_FLOOR = '{{ product.metafields.archive54.min_price }}';
+  
+  var A54_VARIANTS = {
+    {% for variant in product.variants %}
+      "{{ variant.id }}": {{ variant.title | json }},
+    {% endfor %}
+  };
+
+  // ══ Shared state ════════════════════════════════════
+  var _a54Timer  = {};
+  var _a54QTimer = null;   // quota reset countdown
+
+  // ══ Quota helpers (localStorage cache, server via API) ═══
+  function a54QuotaKey() {
+    return 'a54_quota_' + (A54_CUSTOMER || 'preview');
+  }
+
+  // Local cache for instant UI, synced with server
+  var _a54QuotaCache = null;
+
+  // Berlin calendar date — server keys use Europe/Berlin too
+  function a54BerlinToday() {
+    return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
+  }
+
+  function a54GetQuotaData() {
+    var today = a54BerlinToday();
+    var raw   = localStorage.getItem(a54QuotaKey());
+    var data  = raw ? JSON.parse(raw) : {};
+    if (data.date !== today) {
+      data = { date: today, count: 0, products: [] };
+      localStorage.setItem(a54QuotaKey(), JSON.stringify(data));
+    }
+    if (!data.products) data.products = [];
+    _a54QuotaCache = data;
+    return data;
+  }
+
+  function a54GetQuotaCount() { return a54GetQuotaData().count; }
+
+  function a54HasOfferedProduct() {
+    return a54GetQuotaData().products.indexOf(A54_PRODUCT_ID) !== -1;
+  }
+
+  function a54IncrementQuota() {
+    var data  = a54GetQuotaData();
+    data.count = Math.min(data.count + 1, A54_QUOTA_MAX);
+    if (data.products.indexOf(A54_PRODUCT_ID) === -1) {
+      data.products.push(A54_PRODUCT_ID);
+    }
+    localStorage.setItem(a54QuotaKey(), JSON.stringify(data));
+    _a54QuotaCache = data;
+    return data.count;
+  }
+
+  function a54DecrementQuota() {
+    var data  = a54GetQuotaData();
+    data.count = Math.max(data.count - 1, 0);
+    // We DO NOT remove A54_PRODUCT_ID from data.products here!
+    // We must enforce the 1-offer-per-product-per-day rule even if the daily limit is refunded.
+    localStorage.setItem(a54QuotaKey(), JSON.stringify(data));
+    _a54QuotaCache = data;
+    return data.count;
+  }
+
+  function a54IsQuotaFull() { return a54GetQuotaCount() >= A54_QUOTA_MAX; }
+
+  // Seconds until next midnight Berlin time (server resets quota on Europe/Berlin)
+  function a54SecUntilMidnight() {
+    var now = Date.now();
+    var p = a54BerlinToday().split('-');
+    var nextUtc = Date.UTC(+p[0], +p[1] - 1, +p[2] + 1);
+    // Berlin UTC offset (CET +1h, CEST +2h) at that instant
+    var s = new Date(nextUtc).toLocaleString('sv-SE', { timeZone: 'Europe/Berlin' });
+    var off = Date.parse(s.replace(' ', 'T') + 'Z') - nextUtc;
+    return Math.max(1, Math.floor((nextUtc - off - now) / 1000));
+  }
+
+  // ══ UI helpers ════════════════════════════════════════
+  function a54ShowModalState(blockId, stateId) {
+    window._a54ModalState = stateId;
+    ['offer-form','offer-submitted','offer-counter','offer-declined'].forEach(function(s){
+      var el = document.getElementById(s+'-'+blockId);
+      if(el) el.style.display = (s===stateId)?'block':'none';
+    });
+  }
+
+  function a54ShowInlineState(blockId, stateId) {
+    ['a54-widget-default','a54-widget-accepted','a54-widget-expired','a54-widget-quota-full'].forEach(function(s){
+      var el = document.getElementById(s+'-'+blockId);
+      if(el) el.style.display = (s===stateId)?'block':'none';
+    });
+  }
+
+  // Show an error inline in the modal form card (no browser alerts)
+  function a54ShowFormError(blockId, msg) {
+    a54ShowModalState(blockId, 'offer-form');
+    var el = document.getElementById('a54-form-error-' + blockId);
+    if (el) { el.textContent = msg; el.style.display = 'block'; }
+  }
+
+  function a54Fmt(val) {
+    return val.toLocaleString('de-DE',{style:'currency',currency:'EUR'});
+  }
+
+  // Render quota dots and modal badge
+  function a54RenderQuota(blockId) {
+    var count  = a54GetQuotaCount();
+    var badge  = document.getElementById('a54-quota-badge-'+blockId);
+    var mBadge = document.getElementById('a54-modal-quota-'+blockId);
+
+    // Dots: filled = used, empty = remaining
+    if(badge){
+      badge.innerHTML = '';
+      badge.style.position = 'relative';
+      badge.style.cursor = 'pointer';
+
+      for(var i=0; i<A54_QUOTA_MAX; i++){
+        var dot = document.createElement('span');
+        dot.style.cssText = 'display:inline-block; width:6px; height:6px; border-radius:50%; background:'+(i<count?'#C9A96E':'#E0E0E0')+'; transition: background 0.3s;';
+        badge.appendChild(dot);
+      }
+
+      var tooltip = document.createElement('div');
+      tooltip.style.cssText = 'display:none; position:absolute; bottom:100%; right:50%; transform:translateX(50%); margin-bottom:8px; padding:6px 10px; background:#1A1A1A; color:#FFFFFF; font-size:11px; font-weight:600; white-space:nowrap; border-radius:4px; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.15); font-family:"Inter",sans-serif; letter-spacing:0.5px;';
+      tooltip.innerHTML = count + ' / ' + A54_QUOTA_MAX + ' <span style="font-weight:400; color:#9E9E9E;">Angebote</span> <span style="font-size:9px; color:#C9A96E; margin-left:2px; text-transform:uppercase;">heute</span>';
+      
+      var arrow = document.createElement('div');
+      arrow.style.cssText = 'position:absolute; top:100%; left:50%; transform:translateX(-50%); border-width:5px; border-style:solid; border-color:#1A1A1A transparent transparent transparent;';
+      tooltip.appendChild(arrow);
+      
+      badge.appendChild(tooltip);
+      
+      badge.onmouseenter = function() { tooltip.style.display = 'block'; };
+      badge.onmouseleave = function() { tooltip.style.display = 'none'; };
+    }
+    if(mBadge){
+      mBadge.textContent = count+'/'+A54_QUOTA_MAX+' Angebote heute';
+    }
+  }
+
+  // Start quota reset countdown in quota-full state
+  function a54StartQuotaResetTimer(blockId) {
+    var el = document.getElementById('a54-quota-reset-'+blockId);
+    function tickQ(){
+      var s = a54SecUntilMidnight();
+      var h = Math.floor(s/3600);
+      var m = Math.floor((s%3600)/60);
+      var ss= s%60;
+      if(el) el.textContent = String(h).padStart(2,'0')+'h '+String(m).padStart(2,'0')+'m '+String(ss).padStart(2,'0')+'s';
+      // Auto-reset at midnight — local quota auto-resets (date check in
+      // a54GetQuotaData), just refresh UI and unstick quota-full view
+      if(s<=0){
+        clearInterval(_a54QTimer);
+        a54RenderQuota(blockId);
+        var qfEl = document.getElementById('a54-widget-quota-full-'+blockId);
+        if(qfEl && qfEl.style.display !== 'none'){
+          a54ShowInlineState(blockId,'a54-widget-default');
+        }
+      }
+    }
+    tickQ();
+    if(_a54QTimer) clearInterval(_a54QTimer);
+    _a54QTimer = setInterval(tickQ, 1000);
+  }
+
+  // Update all widgets on page to reflect current quota state
+  function a54UpdateAllWidgets() {
+    document.querySelectorAll('[id^="a54-quota-badge-"]').forEach(function(el){
+      var bid = el.id.replace('a54-quota-badge-','');
+      a54RenderQuota(bid);
+    });
+  }
+
+  // ══ Modal open/close ══════════════════════════════════
+  function a54OpenModal(blockId) {
+    // if (!A54_CUSTOMER) {
+    //   alert("Bitte melden Sie sich an, um ein Angebot abzugeben.");
+    //   return;
+    // }
+    if (a54HasOfferedProduct()) {
+      var offeredBtn = document.getElementById('btn-angebot-machen-' + blockId);
+      if (offeredBtn) { offeredBtn.disabled = true; offeredBtn.style.opacity = '0.5'; offeredBtn.style.cursor = 'not-allowed'; offeredBtn.textContent = 'Bereits angefragt'; }
+      return;
+    }
+    var variantInput = document.querySelector('input[name="id"], select[name="id"]');
+    var currentVid = variantInput ? variantInput.value : '';
+    if (variantInput && !currentVid) {
+      var cap = document.getElementById('a54-default-caption-' + blockId);
+      if (cap) { cap.style.display = 'block'; cap.textContent = 'Bitte wählen Sie zuerst eine Variante/Größe aus.'; }
+      return;
+    }
+    
+    // Update variant title in modal
+    var subtitleEl = document.getElementById('a54-modal-variant-title-' + blockId);
+    if (subtitleEl && currentVid && A54_VARIANTS[currentVid] && A54_VARIANTS[currentVid] !== 'Default Title') {
+      subtitleEl.textContent = A54_VARIANTS[currentVid];
+    } else if (subtitleEl) {
+      subtitleEl.textContent = '';
+    }
+    if(a54IsQuotaFull()){
+      // Already at limit — show quota-full inline if not already shown
+      a54ShowInlineState(blockId, 'a54-widget-quota-full');
+      a54StartQuotaResetTimer(blockId);
+      return;
+    }
+    document.getElementById('offer-modal-'+blockId).style.display='flex';
+    a54RenderQuota(blockId);
+  }
+
+  function a54CloseModal(blockId) {
+    var modal = document.getElementById('offer-modal-'+blockId);
+    if(modal) modal.style.display='none';
+    // Copy says "Oder schliessen Sie das Fenster, um abzulehnen." — closing the
+    // counter modal = rejecting the counter offer
+    if (window._a54ModalState === 'offer-counter') {
+      var declinedAmt = a54Fmt(window._a54CounterPrice || 0);
+      window._a54CounterPrice = 0;
+      a54SaveState('declined', { amountStr: declinedAmt });
+      a54ShowDeclinedInline(blockId);
+    }
+    window._a54ModalState = null;
+  }
+
+  function a54ResetModal(blockId) {
+    // Don't allow retry if quota now full
+    if(a54IsQuotaFull()){
+      a54CloseModal(blockId);
+      a54ShowInlineState(blockId,'a54-widget-quota-full');
+      a54StartQuotaResetTimer(blockId);
+      return;
+    }
+    a54ShowModalState(blockId,'offer-form');
+    var resetErr = document.getElementById('a54-form-error-'+blockId);
+    if(resetErr) resetErr.style.display='none';
+    var input = document.getElementById('offer-amount-'+blockId);
+    if(input){input.value=''; input.style.outline='';}
+  }
+
+  function a54ResetToDefault(blockId) {
+    a54ClearSavedState();
+    if(a54IsQuotaFull()){
+      a54ShowInlineState(blockId,'a54-widget-quota-full');
+      a54StartQuotaResetTimer(blockId);
+      return;
+    }
+    a54ShowInlineState(blockId,'a54-widget-default');
+    a54ResetModal(blockId);
+    if(_a54Timer[blockId]) clearInterval(_a54Timer[blockId]);
+  }
+
+  // ══ Offer flow ════════════════════════════════════════
+  function a54SubmitOffer(blockId, productId, customerId) {
+    var input  = document.getElementById('offer-amount-'+blockId);
+    var val = input ? parseFloat(input.value.replace(',','.')) : 0;
+    if(!val || val<=0){
+      if(input){input.style.outline='2px solid #C9A96E'; input.focus();}
+      return;
+    }
+    if(input) input.style.outline='';
+    var errEl = document.getElementById('a54-form-error-'+blockId);
+    if(errEl) errEl.style.display = 'none';
+
+    a54ShowModalState(blockId,'offer-submitted');
+    var msg = document.getElementById('offer-submitted-msg-'+blockId);
+    if(msg) msg.textContent = 'Wir prüfen Ihr Angebot von '+a54Fmt(val)+'...';
+
+    if(window.Archive54OfferData){
+      fetch('/apps/archives54-offer-app/offers',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({customerId:customerId,productId:productId,variantId:window.Archive54OfferData.variantId,amount:val,shopDomain:window.Archive54OfferData.shopDomain,salePrice:window.Archive54OfferData.salePrice,compareAtPrice:window.Archive54OfferData.compareAtPrice})
+      })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if (data.action === 'QUOTA_FULL') {
+          a54CloseModal(blockId);
+          a54ShowInlineState(blockId, 'a54-widget-quota-full');
+          a54StartQuotaResetTimer(blockId);
+        } else if (data.action === 'ALREADY_OFFERED') {
+          a54CloseModal(blockId);
+          var offeredBtn = document.getElementById('btn-angebot-machen-'+blockId);
+          if (offeredBtn) { offeredBtn.disabled = true; offeredBtn.style.opacity = '0.5'; offeredBtn.style.cursor = 'not-allowed'; offeredBtn.textContent = 'Bereits angefragt'; }
+        } else if (data.action === 'ERROR') {
+          // Server error (e.g. Redis/system unavailable) — show inline, no quota change
+          a54ShowFormError(blockId, data.message || 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+        } else {
+          // Sync UI quota dots visually
+          a54IncrementQuota();
+          a54UpdateAllWidgets();
+
+          if (data.action === 'ACCEPT_NO_CODE') {
+            a54CloseModal(blockId);
+            a54SaveState('accepted_no_code', { amountStr: a54Fmt(val) });
+            var caption = document.getElementById('a54-default-caption-'+blockId);
+            if (caption) {
+              caption.style.display = 'block';
+              caption.innerHTML = 'Ihr Angebot von <strong>' + a54Fmt(val) + '</strong> liegt &uuml;ber oder entspricht dem regul&auml;ren Preis. Sie k&ouml;nnen das Produkt direkt zum normalen Preis kaufen.';
+            }
+            var btn = document.getElementById('btn-angebot-machen-'+blockId);
+            if(btn) {
+              btn.disabled = false;
+              btn.style.opacity = '1';
+              btn.style.cursor = 'pointer';
+              btn.style.background = '#1A1A1A';
+              btn.style.color = '#FFF';
+              btn.textContent = 'In den Warenkorb & Checkout';
+              btn.onclick = function(e) {
+                e.preventDefault();
+                var rawVid = window.Archive54OfferData ? window.Archive54OfferData.variantId : '';
+                var numVid = rawVid.split('/').pop();
+                if (!numVid) { console.warn('[Archive54] Variant id missing for cart redirect'); return; }
+                
+                fetch('/cart/add.js', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    items: [{
+                      id: parseInt(numVid),
+                      quantity: 1
+                    }]
+                  })
+                })
+                .then(function() {
+                  window.location.href = '/checkout';
+                })
+                .catch(function(err) {
+                  console.warn('[Archive54] Cart add error:', err);
+                  window.location.href = '/cart/' + numVid + ':1';
+                });
+              };
+            }
+            a54ShowInlineState(blockId, 'a54-widget-default');
+          } else if (data.action === 'ACCEPT') {
+            a54CloseModal(blockId);
+            var expiresAt = Date.now() + 30*60*1000;
+            var codeToSave = data.discountCode || '';
+            a54SaveState('accepted', { amountStr: a54Fmt(val), discountCode: codeToSave, expiresAt: expiresAt });
+            a54StartAccepted(blockId, a54Fmt(val), 30*60, false, codeToSave);
+          } else if (data.action === 'COUNTER') {
+            a54ShowModalState(blockId, 'offer-counter');
+            var cAmt = document.getElementById('a54-counter-amount-'+blockId);
+            if(!cAmt) cAmt = document.getElementById('counter-offer-amount-'+blockId);
+            if(cAmt) cAmt.textContent = a54Fmt(data.counterPrice);
+            
+            var uAmt = document.getElementById('a54-user-amount-'+blockId);
+            if(!uAmt) uAmt = document.getElementById('counter-user-amount-'+blockId);
+            if(uAmt) uAmt.textContent = a54Fmt(val);
+
+            window._a54CounterPrice = data.counterPrice;
+            var counterMsg = document.getElementById('counter-msg-'+blockId);
+            if(counterMsg) counterMsg.textContent = data.message || 'Wie wäre es mit diesem Preis?';
+            a54SaveState('counter', { amountStr: a54Fmt(val), counterPrice: data.counterPrice, message: data.message, expiresAt: Date.now() + 30*60*1000 });
+          } else {
+            // DECLINE — update inline card immediately + show modal
+            a54SaveState('declined', { amountStr: a54Fmt(val) });
+            a54ShowDeclinedInline(blockId);
+            a54ShowModalState(blockId, 'offer-declined');
+            var dAmt = document.getElementById('declined-msg-'+blockId);
+            if(dAmt) dAmt.textContent = 'Leider konnten wir Ihr Angebot von '+a54Fmt(val)+' nicht annehmen. (Unter Mindestpreis)';
+          }
+        }
+      })
+      .catch(function(e){
+        console.warn('[Archive54]',e);
+        a54ShowFormError(blockId, 'Verbindung fehlgeschlagen. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.');
+      });
+    } else {
+      a54CloseModal(blockId);
+      var loginCap = document.getElementById('a54-default-caption-' + blockId);
+      if (loginCap) { loginCap.style.display = 'block'; loginCap.textContent = 'Bitte loggen Sie sich ein, um ein Angebot abzugeben.'; }
+    }
+  }
+
+  function a54AcceptCounter(blockId) {
+    var counterPrice = window._a54CounterPrice || 0;
+    if (!counterPrice) {
+      a54CloseModal(blockId);
+      return;
+    }
+    fetch('/apps/archives54-offer-app/offers/counter-accept', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        customerId: A54_CUSTOMER,
+        productId: A54_PRODUCT_ID,
+        variantId: window.Archive54OfferData.variantId,
+        counterPrice: counterPrice,
+        shopDomain: window.Archive54OfferData.shopDomain
+      })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.action === 'ACCEPT' && data.discountCode) {
+        // Visual refund of the quota since it's free
+        a54DecrementQuota();
+        a54UpdateAllWidgets();
+
+        window._a54ModalState = null; // accepted — close must NOT trigger decline
+        a54CloseModal(blockId);
+        var expiresIn = data.expiresIn || 30*60;
+        var expiresAt = Date.now() + expiresIn * 1000;
+        a54SaveState('accepted', { amountStr: a54Fmt(counterPrice), discountCode: data.discountCode, expiresAt: expiresAt });
+        a54StartAccepted(blockId, a54Fmt(counterPrice), expiresIn, false, data.discountCode);
+      } else {
+        a54ShowFormError(blockId, data.message || 'Fehler beim Akzeptieren.');
+      }
+    })
+    .catch(function(e) {
+      console.warn('[Archive54] Counter accept error:', e);
+      a54ShowFormError(blockId, 'Verbindung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+    });
+  }
+
+  // Accepted inline + countdown
+  function a54StartAccepted(blockId, amountStr, durationSec, noCode, discountCodeStr) {
+    var amtEl = document.getElementById('a54-accepted-amount-'+blockId);
+    if(amtEl) amtEl.textContent = amountStr;
+    
+    var discountBox = document.getElementById('a54-discount-box-'+blockId);
+    var hasCode = discountCodeStr && discountCodeStr.indexOf('ARCH54-') === 0;
+    if (discountBox) {
+      discountBox.style.display = (noCode && !hasCode) ? 'none' : 'flex';
+    }
+    var codeEl = document.getElementById('a54-discount-code-'+blockId);
+    if(codeEl) codeEl.textContent = hasCode ? discountCodeStr : 'Wird generiert...';
+
+    a54ShowInlineState(blockId,'a54-widget-accepted');
+    var remaining = durationSec;
+    var timerEl   = document.getElementById('a54-countdown-'+blockId);
+    function tick(){
+      if(remaining<=0){
+        clearInterval(_a54Timer[blockId]);
+        var expEl = document.getElementById('a54-expired-amount-'+blockId);
+        if(expEl) expEl.textContent = amountStr;
+        a54ShowInlineState(blockId,'a54-widget-expired');
+        return;
+      }
+      var h=Math.floor(remaining/3600), m=Math.floor((remaining%3600)/60), s=remaining%60;
+      if(timerEl) timerEl.textContent = (h>0?h+':':'') + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      remaining--;
+    }
+    tick();
+    if(_a54Timer[blockId]) clearInterval(_a54Timer[blockId]);
+    _a54Timer[blockId]=setInterval(tick,1000);
+  }
+
+  function a54CopyCode(blockId) {
+    var codeEl = document.getElementById('a54-discount-code-'+blockId);
+    if(!codeEl) return;
+    var code = codeEl.textContent;
+    
+    // Immediate UI feedback
+    showCopied();
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).catch(function() { fallbackCopy(code); });
+    } else {
+      fallbackCopy(code);
+    }
+    
+    function fallbackCopy(text) {
+      var textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.top = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(textArea);
+    }
+
+    function showCopied() {
+      var txtEl = document.getElementById('a54-copy-text-'+blockId);
+      var iconEl = document.getElementById('a54-copy-icon-'+blockId);
+      
+      if(iconEl) {
+        iconEl.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>';
+      }
+      if(txtEl) {
+        txtEl.textContent = 'Kopiert!';
+      }
+
+      setTimeout(function(){
+        if(txtEl) txtEl.textContent = 'Kopieren';
+        if(iconEl) {
+          iconEl.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+        }
+      }, 2000);
+    }
+  }
+
+  function a54AcceptDeal(blockId) {
+    var codeEl = document.getElementById('a54-discount-code-' + blockId);
+    var code = codeEl ? codeEl.textContent.trim() : '';
+    var rawVid = window.Archive54OfferData ? window.Archive54OfferData.variantId : '';
+    var numVid = rawVid ? rawVid.split('/').pop() : '';
+    var hasCode = code && code.indexOf('ARCH54-') === 0;
+
+    if (!numVid) {
+      console.warn('[Archive54] Variant id missing for checkout redirect');
+      return;
+    }
+
+    // Build checkout URL
+    var checkoutUrl = '/checkout';
+    if (hasCode) {
+      checkoutUrl += '?discount=' + encodeURIComponent(code);
+    }
+
+    // Add to cart with variant, then redirect to checkout
+    fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: [{
+          id: parseInt(numVid),
+          quantity: 1
+        }]
+      })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function() {
+      window.location.href = checkoutUrl;
+    })
+    .catch(function(e) {
+      console.warn('[Archive54] Cart add error:', e);
+      window.location.href = '/cart/' + numVid + ':1';
+    });
+  }
+
+  // ══ State persistence (Upstash Redis via API) ═══════
+  function a54SaveState(state, data) {
+    if (!A54_CUSTOMER) return;
+    fetch('/apps/archives54-offer-app/offers/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerId: A54_CUSTOMER, productId: A54_PRODUCT_ID, state: state, data: data || {} })
+    }).catch(function(e) { console.warn('[Archive54] Save state error:', e); });
+  }
+
+  function a54ClearSavedState() {
+    if (!A54_CUSTOMER) return;
+    fetch('/apps/archives54-offer-app/offers/state?customerId=' + encodeURIComponent(A54_CUSTOMER) + '&productId=' + encodeURIComponent(A54_PRODUCT_ID), {
+      method: 'DELETE'
+    }).catch(function(e) { console.warn('[Archive54] Clear state error:', e); });
+  }
+
+  // ══ Inline state helpers (used by init + submit — no refresh needed) ══
+  function a54ShowDeclinedInline(bid) {
+    a54ShowInlineState(bid, 'a54-widget-default');
+    var caption = document.getElementById('a54-default-caption-' + bid);
+    if (caption) {
+      caption.style.display = 'block';
+      caption.innerHTML = 'Ihr letztes Angebot wurde leider abgelehnt. Das Tageslimit für dieses Produkt ist bereits erreicht.';
+    }
+    var btn = document.getElementById('btn-angebot-machen-' + bid);
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+      btn.textContent = 'Bereits abgelehnt';
+    }
+  }
+
+  function a54ShowAcceptedNoCodeInline(bid) {
+    a54ShowInlineState(bid, 'a54-widget-default');
+    var caption = document.getElementById('a54-default-caption-' + bid);
+    if (caption) {
+      caption.style.display = 'block';
+      caption.innerHTML = 'Ihr Angebot wurde akzeptiert! Der regul\u00e4re Preis ist der beste Preis. Sie k\u00f6nnen das Produkt direkt zum normalen Preis kaufen.';
+    }
+    var btn = document.getElementById('btn-angebot-machen-' + bid);
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+      btn.textContent = 'Bereits abgefragt';
+    }
+  }
+
+  // ══ Init on page load ════════════════════════════════
+  (function(){
+    var bid = A54_BLOCK_ID;
+    // Out of stock → disabled button, no offer flow (Liquid product.available,
+    // no API call needed)
+    if (A54_PRODUCT_AVAILABLE === false) {
+      a54ShowInlineState(bid, 'a54-widget-default');
+      var oosBtn = document.getElementById('btn-angebot-machen-' + bid);
+      if (oosBtn) {
+        oosBtn.disabled = true;
+        oosBtn.style.background = '#E5E5E5';
+        oosBtn.style.color = '#999999';
+        oosBtn.style.cursor = 'not-allowed';
+        oosBtn.textContent = 'Produkt ausverkauft';
+      }
+      return;
+    }
+    a54RenderQuota(bid);
+    // Show immediately — single merged fetch below overrides with real state
+    a54ShowInlineState(bid, 'a54-widget-default');
+    if (!A54_CUSTOMER) {
+      return;
+    }
+    // Single fetch: state + quota in one response (no race, no flash)
+    fetch('/apps/archives54-offer-app/offers/state?customerId=' + encodeURIComponent(A54_CUSTOMER) + '&productId=' + encodeURIComponent(A54_PRODUCT_ID))
+      .then(function(res) { return res.json(); })
+      .then(function(saved) {
+        // Update local quota from server data
+        if (saved && saved.dailyCount != null) {
+          var local = a54GetQuotaData();
+          if (saved.dailyCount > local.count) local.count = saved.dailyCount;
+          if (saved.productOffered && local.products.indexOf(A54_PRODUCT_ID) === -1) {
+            local.products.push(A54_PRODUCT_ID);
+          }
+          localStorage.setItem(a54QuotaKey(), JSON.stringify(local));
+          _a54QuotaCache = local;
+          a54RenderQuota(bid);
+        }
+
+        // Priority: saved state > quota > default
+        // Stale state from previous day: quota reset but state still in Redis (24h TTL)
+        if (saved && saved.state && saved.dailyCount === 0 && !saved.productOffered) {
+          a54ClearSavedState();
+          a54ShowInlineState(bid, 'a54-widget-default');
+          return;
+        }
+
+        if (saved && saved.state) {
+          if (saved.state === 'accepted') {
+            var remaining = saved.data.expiresAt ? Math.floor((saved.data.expiresAt - Date.now()) / 1000) : 0;
+            if (remaining > 0) {
+              a54StartAccepted(bid, saved.data.amountStr || '', remaining, !saved.data.discountCode, saved.data.discountCode || '');
+            } else {
+              a54ShowInlineState(bid, 'a54-widget-expired');
+              var expEl = document.getElementById('a54-expired-amount-' + bid);
+              if (expEl) expEl.textContent = saved.data.amountStr || '';
+            }
+          } else if (saved.state === 'accepted_no_code') {
+            a54ShowAcceptedNoCodeInline(bid);
+          } else if (saved.state === 'declined') {
+            a54ShowDeclinedInline(bid);
+          } else if (saved.state === 'counter') {
+            var counterRemaining = saved.data.expiresAt ? Math.floor((saved.data.expiresAt - Date.now()) / 1000) : 0;
+            if (counterRemaining > 0) {
+              window._a54CounterPrice = saved.data.counterPrice;
+              var cModal = document.getElementById('offer-modal-' + bid);
+              if (cModal) cModal.style.display = 'flex';
+              a54ShowModalState(bid, 'offer-counter');
+              var rAmt = document.getElementById('counter-offer-amount-' + bid);
+              if (rAmt) rAmt.textContent = a54Fmt(saved.data.counterPrice);
+              var rUser = document.getElementById('counter-user-amount-' + bid);
+              if (rUser) rUser.textContent = saved.data.amountStr || '';
+              var rMsg = document.getElementById('counter-msg-' + bid);
+              if (rMsg) rMsg.textContent = saved.data.message || 'Wie w\u00e4re es mit diesem Preis?';
+            } else {
+              a54ClearSavedState();
+              a54ShowInlineState(bid, 'a54-widget-default');
+            }
+          } else {
+            a54ShowInlineState(bid, 'a54-widget-default');
+            if (a54HasOfferedProduct()) {
+              var btn = document.getElementById('btn-angebot-machen-' + bid);
+              if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.style.cursor = 'not-allowed'; btn.innerHTML = 'Bereits angefragt'; }
+            }
+          }
+        } else {
+          // No saved state → quota display
+          if (a54IsQuotaFull()) {
+            a54ShowInlineState(bid, 'a54-widget-quota-full');
+            a54StartQuotaResetTimer(bid);
+          } else if (a54HasOfferedProduct()) {
+            var btn2 = document.getElementById('btn-angebot-machen-' + bid);
+            if (btn2) { btn2.disabled = true; btn2.style.opacity = '0.5'; btn2.style.cursor = 'not-allowed'; btn2.innerHTML = 'Bereits angefragt'; }
+          }
+        }
+      })
+      .catch(function(e) {
+        console.warn('[Archive54] Restore state error:', e);
+        a54ShowInlineState(bid, 'a54-widget-default');
+      });
+  })();
+
+  // ══ Escape key ════════════════════════════════════════
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){
+      document.querySelectorAll('[id^="offer-modal-"]').forEach(function(m){
+        if(m.style.display==='flex') a54CloseModal(m.id.replace('offer-modal-',''));
+      });
+    }
+  });
+</script>
+{% endif %}
+
+<!-- Passing data to JS -->
+{% if customer %}
+<script>
+  window.Archive54OfferData = {
+    customerId: "{{ customer.id }}",
+    productId: "{{ product.id }}",
+    variantId: "{{ product.selected_or_first_available_variant.id }}",
+    shopDomain: "{{ shop.domain }}",
+    salePrice: {{ product.price | divided_by: 100.0 | round: 2 }},
+    compareAtPrice: {{ product.selected_or_first_available_variant.compare_at_price | default: product.price | divided_by: 100.0 | round: 2 }}
+  };
+
+  // Update variantId when customer changes variant/size
+  document.addEventListener('DOMContentLoaded', function() {
+    // Listen for URL changes (variant picker updates URL)
+    var lastUrl = window.location.href;
+    var observer = new MutationObserver(function() {
+      if (window.location.href !== lastUrl) {
+        lastUrl = window.location.href;
+        var match = window.location.search.match(/variant=(\d+)/);
+        if (match) {
+          window.Archive54OfferData.variantId = match[1];
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Also listen for variant input changes (hidden input)
+    var variantInput = document.querySelector('input[name="id"], select[name="id"]');
+    if (variantInput) {
+      variantInput.addEventListener('change', function() {
+        if (this.value) {
+          window.Archive54OfferData.variantId = this.value;
+        }
+      });
+    }
+  });
+</script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Archive54 Offer Widget",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    { "type": "product", "id": "product", "label": "Produkt", "autofill": true }
+  ]
+}
+{% endschema %}
