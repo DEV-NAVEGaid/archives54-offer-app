@@ -152,6 +152,12 @@ export async function getProductPricing(
     acceptPrice = round2(uvp * (1 - randomDiscount));
   }
 
+  // Sale price can be deeper than the max 60%-off floor — never quote a
+  // counter/accept price at or above what the customer can already buy for
+  if (acceptPrice >= salePrice) {
+    acceptPrice = round2(salePrice * 0.99);
+  }
+
   // Minimum offer to trigger a counter (e.g., 15% below accept price)
   const counterTriggerPrice = round2(acceptPrice * 0.85);
 

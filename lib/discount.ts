@@ -37,6 +37,7 @@ export async function createDiscountCode(params: {
 
   // If no discount needed (finalPrice >= salePrice), skip code creation
   if (discountAmount <= 0) {
+    console.warn(`[Archive54] No discount needed: salePrice ${salePrice} <= finalPrice ${finalPrice} (product ${productId})`);
     return null;
   }
 

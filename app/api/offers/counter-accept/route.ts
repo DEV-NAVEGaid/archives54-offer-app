@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripGid, getTrustedShopDomain } from "@/lib/shopify";
 import { createDiscountCode } from "@/lib/discount";
-import { refundOffer, consumePendingCounter } from "@/lib/rate-limit";
+import { refundOffer, consumePendingCounter, setPendingCounter } from "@/lib/rate-limit";
 import { getProductPricing } from "@/lib/pricing";
 import { RedisUnavailableError } from "@/lib/redis";
 
@@ -56,6 +56,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // A price at/above the sale price can never get a discount code — client
+    // should just buy at the listed sale price (guard BEFORE consuming pending)
+    if (price >= pricing.salePrice) {
+      return NextResponse.json(
+        { action: "ERROR", message: "Kaufen Sie direkt zum Sale-Preis — er ist bereits besser." },
+        { status: 400 }
+      );
+    }
+
     // bug 10: require a real pending COUNTER (atomically consumed so two
     // concurrent accepts can't mint two codes from one counter)
     const hasPending = await consumePendingCounter(customerId, productId, price);
@@ -67,16 +76,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate discount code via centralized library
-    const discount = await createDiscountCode({
-      productId,
-      variantId,
-      customerId,
-      shopDomain: trustedDomain,
-      salePrice: pricing.salePrice,
-      finalPrice: price,
-    });
+    let discount;
+    try {
+      discount = await createDiscountCode({
+        productId,
+        variantId,
+        customerId,
+        shopDomain: trustedDomain,
+        salePrice: pricing.salePrice,
+        finalPrice: price,
+      });
+    } catch (e) {
+      console.error("[Archive54] Counter accept discount failed:", e);
+      // ponytail: pending counter was already consumed — restore it so retry works
+      await setPendingCounter(customerId, productId, price);
+      throw e;
+    }
 
     if (!discount) {
+      await setPendingCounter(customerId, productId, price);
       return NextResponse.json(
         { action: "ERROR", message: "Rabattcode konnte nicht erstellt werden." },
         { status: 500 }

@@ -711,7 +711,16 @@ var A54_PRODUCT_AVAILABLE = {{ product.available | json }};
         a54SaveState('accepted', { amountStr: a54Fmt(counterPrice), discountCode: data.discountCode, expiresAt: expiresAt });
         a54StartAccepted(blockId, a54Fmt(counterPrice), expiresIn, false, data.discountCode);
       } else {
-        a54ShowFormError(blockId, data.message || 'Fehler beim Akzeptieren.');
+        // Ghost counter: pending already consumed server-side — don't let this
+        // modal reopen on every refresh
+        if (data.message === 'Kein aktives Gegenangebot vorhanden.') {
+          window._a54ModalState = null; // close must NOT trigger decline
+          a54ClearSavedState();
+          a54CloseModal(blockId);
+          a54ShowInlineState(blockId, 'a54-widget-default');
+        } else {
+          a54ShowFormError(blockId, data.message || 'Fehler beim Akzeptieren.');
+        }
       }
     })
     .catch(function(e) {
@@ -1000,6 +1009,16 @@ var A54_PRODUCT_AVAILABLE = {{ product.available | json }};
   });
 </script>
 {% endif %}
+
+<!-- Guest: no init script renders above, unhide the default card (disabled button + login links) -->
+{% unless customer or request.design_mode %}
+<script>
+  (function(){
+    var el = document.getElementById('a54-widget-default-{{ block.id }}');
+    if (el) el.style.display = 'block';
+  })();
+</script>
+{% endunless %}
 
 <!-- Passing data to JS -->
 {% if customer %}
