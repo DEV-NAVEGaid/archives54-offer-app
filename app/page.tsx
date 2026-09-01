@@ -1,68 +1,89 @@
-import Image from "next/image";
-
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
+    <div className="flex flex-col flex-1 items-center bg-zinc-50 font-sans dark:bg-black">
+      <main className="w-full max-w-3xl px-6 py-16">
+        <p className="text-sm font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+          Archive 54
+        </p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black dark:text-zinc-50">
+          Offer App — Rules &amp; Guide
+        </h1>
+        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+          Price negotiation widget for Shopify. Rule-based, no manual approval.
+        </p>
+
+        <h2 className="mt-12 text-xl font-semibold text-black dark:text-zinc-50">
+          1. Pricing Rules
+        </h2>
+        <ul className="mt-4 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <li>
+            <strong>Floor price</strong> = 54–60% off UVP (random per 5-min
+            window), or the variant metafield{" "}
             <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
+              archive54.min_price
             </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+            if set (must be below the sale price).
+          </li>
+          <li>
+            The floor is always capped below the current sale price — the widget
+            never counters at or above what the customer can already buy for.
+          </li>
+          <li>
+            Prices are always verified server-side via the Shopify Admin API.
+            Frontend prices are never trusted.
+          </li>
+        </ul>
+
+        <h2 className="mt-12 text-xl font-semibold text-black dark:text-zinc-50">
+          2. Offer Flow
+        </h2>
+        <ul className="mt-4 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <li>
+            <strong>Offer ≥ floor price</strong> → ACCEPT, discount code is
+            generated immediately.
+          </li>
+          <li>
+            <strong>Offer ≥ 85% of floor</strong> → COUNTER at the floor price
+            (&quot;Das ist unser Mindestpreis&quot;). Customer can accept or
+            decline.
+          </li>
+          <li>
+            <strong>Offer below counter threshold</strong> → DECLINE.
+          </li>
+          <li>
+            <strong>Offer ≥ sale price</strong> → buy at sale price, no code
+            needed.
+          </li>
+        </ul>
+
+        <h2 className="mt-12 text-xl font-semibold text-black dark:text-zinc-50">
+          3. Discount Codes
+        </h2>
+        <ul className="mt-4 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <li>
+            Format{" "}
+            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
+              ARCH54-XXXXXX
+            </code>
+            , fixed amount = sale price − agreed price.
+          </li>
+          <li>Valid 30 minutes, one usage, one customer, one product.</li>
+          <li>
+            Enforced by Shopify (expiry + usage limit); Redis only caches the
+            server-side check.
+          </li>
+        </ul>
+
+        <h2 className="mt-12 text-xl font-semibold text-black dark:text-zinc-50">
+          4. Quota Rules
+        </h2>
+        <ul className="mt-4 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
+          <li>Max 4 offers per customer per day.</li>
+          <li>1 offer per product per day (after submit: &quot;Bereits angefragt&quot;).</li>
+          <li>Quota resets at midnight Berlin time.</li>
+          <li>Accepting a counter-offer refunds the used quota slot.</li>
+          <li>A pending counter expires after 30 minutes.</li>
+        </ul>
       </main>
     </div>
   );
