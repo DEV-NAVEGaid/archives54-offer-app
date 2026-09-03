@@ -45,9 +45,6 @@ function computeAvailability(variant: {
   );
 }
 
-// Fetch a single variant from the product's variant list via Admin REST
-// ponytail: typed loosely — Shopify variant JSON has 6+ fields we access
-// dynamically; a full interface is ceremony for a one-fetch helper
 async function fetchVariant(
   productId: string,
   variantId: string,
@@ -90,10 +87,7 @@ export async function getProductPricing(
   const accessToken = process.env.SHOPIFY_ACCESS_TOKEN;
   if (!accessToken) throw new Error("SHOPIFY_ACCESS_TOKEN not set");
 
-  // Version the key so old random-floor quotes do not survive this rule change.
   const cacheKey = `pricing:v4:${productId}:${variantId}`;
-  // ponytail: cache is optional — read/write failures are swallowed, pricing
-  // works without Redis. Availability is always refreshed on a hit.
   try {
     const cached = await redis.get<string>(cacheKey);
     if (cached) {
@@ -146,8 +140,6 @@ export async function getProductPricing(
     }
   }
 
-  // Shopify's listed sale price is the authoritative 54%-off point. The
-  // counter is the midpoint between that price and the configured floor.
   const counterPrice = Math.min(round2((salePrice + floorPrice) / 2), salePrice);
   const counterTriggerPrice = round2(floorPrice * 0.85);
 

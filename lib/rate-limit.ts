@@ -10,7 +10,6 @@ function getTodayKey(): string {
     .split("T")[0];
 }
 
-// instant — the old toLocaleString-parse ran through the server's local tz
 function getBerlinOffsetMs(t: number): number {
   const s = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Berlin",
@@ -170,25 +169,14 @@ export async function refundOffer(
       await redis.decr(dailyKey);
     }
 
-    // ponytail: releaseProduct=true also deletes the productKey — used when the
-    // offer never actually happened (OOS). Default false keeps it blocked so
-    // customers can't farm discount codes for the same product.
     if (releaseProduct) {
       await redis.del(`rate:${customerId}:${today}:prod:${productId}`);
     }
 
-    // We DO NOT delete the productKey here by default.
-    // Although the counter is 'free' (refunds daily limit),
-    // we still want to enforce 'Max 1 offer/product/customer/day'
-    // so they can't farm discount codes for the same product!
   } catch (e) {
     console.error("[Archive54] refundOffer failed (ignored):", e);
   }
 }
-
-// --- Pending counter offer (bug 10: counter-accept must require a real COUNTER) ---
-// Stored when COUNTER is returned; consumed with a matched GETDEL on accept so
-// concurrent accept calls can't mint two codes from one counter.
 
 export async function setPendingCounter(
   customerId: string,
@@ -208,10 +196,6 @@ export async function setPendingCounter(
   }
 }
 
-// The final GETDEL is atomic, so two concurrent counter-accept calls cannot
-// both consume the pending counter. Returns true only if a pending counter
-// exists AND its price matches. A
-// mismatched request must not consume the valid counter.
 export async function consumePendingCounter(
   customerId: string,
   productId: string,

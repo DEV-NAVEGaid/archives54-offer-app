@@ -7,7 +7,6 @@ export class RedisUnavailableError extends Error {
   }
 }
 
-// ponytail: lazy init so build-time page-data collection doesn't instantiate Redis
 let _redis: Redis | undefined;
 
 export function getRedis(): Redis {
@@ -22,7 +21,6 @@ export function getRedis(): Redis {
   return _redis;
 }
 
-// ponytail: proxy keeps `import { redis }` working while deferring construction to first use
 export const redis: Redis = new Proxy({} as Redis, {
   get(_, prop) {
     const instance = getRedis();

@@ -6,9 +6,6 @@ export function stripGid(id: string): string {
   return match ? match[1] : id;
 }
 
-// ponytail: client-supplied shopDomain flows into fetch URLs that carry the
-// Admin API token — without this check, "{shopDomain: 'evil.com'}" exfiltrates
-// the token. This app serves exactly ONE shop, so allow-list it.
 export function getTrustedShopDomain(clientDomain: string): string | null {
   const normalize = (s: string) =>
     s.replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim().toLowerCase();
