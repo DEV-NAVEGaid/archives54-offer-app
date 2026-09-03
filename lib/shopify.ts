@@ -19,10 +19,7 @@ export function getTrustedShopDomain(clientDomain: string): string | null {
     : null;
 }
 
-// ponytail: verifies Shopify app-proxy (or OAuth callback) HMAC signature.
-// Blocks direct API access — requests must arrive through Shopify's proxy.
-// Does NOT authenticate the customerId itself (still client-supplied); a full
-// fix needs Customer Accounts API. Proportionate for low-stakes UI state.
+// Verify Shopify App Proxy HMAC and return the authenticated shop/customer.
 export function verifyShopifySignature(
   searchParams: URLSearchParams,
   sigParam = "signature"
@@ -31,14 +28,17 @@ export function verifyShopifySignature(
   if (!secret) return false;
   const sig = searchParams.get(sigParam);
   if (!sig) return false;
-  const params: Record<string, string> = {};
+  const params = new Map<string, string[]>();
   searchParams.forEach((v, k) => {
-    if (k !== sigParam) params[k] = v;
+    if (k === sigParam) return;
+    const values = params.get(k) || [];
+    values.push(v);
+    params.set(k, values);
   });
-  const message = Object.keys(params)
+  const message = Array.from(params.entries())
+    .map(([k, values]) => `${k}=${values.join(",")}`)
     .sort()
-    .map((k) => `${k}=${params[k]}`)
-    .join("&");
+    .join("");
   const expected = createHmac("sha256", secret).update(message).digest("hex");
   if (sig.length !== expected.length) return false;
   try {
@@ -47,4 +47,19 @@ export function verifyShopifySignature(
     return false;
   }
 }
-  
+
+export function getAppProxyAuth(
+  searchParams: URLSearchParams
+): { customerId: string; shopDomain: string } | null {
+  if (!verifyShopifySignature(searchParams)) return null;
+
+  const shop = searchParams.get("shop");
+  const loggedInCustomerId = searchParams.get("logged_in_customer_id");
+  if (!shop || !loggedInCustomerId) return null;
+
+  const shopDomain = getTrustedShopDomain(shop);
+  const customerId = stripGid(loggedInCustomerId);
+  if (!shopDomain || !customerId) return null;
+
+  return { customerId, shopDomain };
+}

@@ -17,16 +17,13 @@ export default function Home() {
         </h2>
         <ul className="mt-4 list-disc space-y-2 pl-6 text-zinc-700 dark:text-zinc-300">
           <li>
-            <strong>Floor price</strong> = 54–60% off UVP (random per 5-min
-            window), or the variant metafield{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              archive54.min_price
-            </code>{" "}
-            if set (must be below the sale price).
+            <strong>Sale price</strong> = 54% off UVP, where UVP is the
+            Shopify compare-at price. The negotiation floor is 60% off UVP;
+            the counter is the midpoint between the sale price and floor.
           </li>
           <li>
-            The floor is always capped below the current sale price — the widget
-            never counters at or above what the customer can already buy for.
+            The variant metafield <code>archive54.min_price</code> can override
+            the default floor when a valid value is configured.
           </li>
           <li>
             Prices are always verified server-side via the Shopify Admin API.
@@ -43,12 +40,11 @@ export default function Home() {
             generated immediately.
           </li>
           <li>
-            <strong>Offer ≥ 85% of floor</strong> → COUNTER at the floor price
-            (&quot;Das ist unser Mindestpreis&quot;). Customer can accept or
-            decline.
+            <strong>Offer ≥ 85% of floor but below floor</strong> → COUNTER at
+            the midpoint. Customer can accept or decline.
           </li>
           <li>
-            <strong>Offer below counter threshold</strong> → DECLINE.
+            <strong>Offer below the counter trigger</strong> → DECLINE.
           </li>
           <li>
             <strong>Offer ≥ sale price</strong> → buy at sale price, no code

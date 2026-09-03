@@ -187,39 +187,43 @@ export async function refundOffer(
 }
 
 // --- Pending counter offer (bug 10: counter-accept must require a real COUNTER) ---
-// Stored when COUNTER is returned; atomically consumed (GETDEL) on accept so
+// Stored when COUNTER is returned; consumed with a matched GETDEL on accept so
 // concurrent accept calls can't mint two codes from one counter.
 
 export async function setPendingCounter(
   customerId: string,
   productId: string,
   counterPrice: number
-): Promise<void> {
-  // ponytail: best-effort — if this fails, the counter just can't be accepted
+): Promise<boolean> {
   try {
     await redis.set(
       `counter:${customerId}:${productId}`,
       JSON.stringify({ counterPrice, expiresAt: Date.now() + 30 * 60 * 1000 }),
       { ex: 1800 }
     );
+    return true;
   } catch (e) {
     console.error("[Archive54] setPendingCounter failed:", e);
+    return false;
   }
 }
 
-// ponytail: GETDEL atomically reads + deletes — closes the TOCTOU window where
-// two concurrent counter-accept calls both see the pending counter.
-// Returns true only if a pending counter exists AND its price matches.
+// The final GETDEL is atomic, so two concurrent counter-accept calls cannot
+// both consume the pending counter. Returns true only if a pending counter
+// exists AND its price matches. A
+// mismatched request must not consume the valid counter.
 export async function consumePendingCounter(
   customerId: string,
   productId: string,
   counterPrice: number
 ): Promise<boolean> {
   return withRedis(async () => {
-    const raw = await redis.getdel<string>(`counter:${customerId}:${productId}`);
+    const key = `counter:${customerId}:${productId}`;
+    const raw = await redis.get<string>(key);
     if (!raw) return false;
     const data = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (data.expiresAt && Date.now() > data.expiresAt) return false;
-    return Math.abs(counterPrice - data.counterPrice) < 0.01;
+    if (Math.abs(counterPrice - data.counterPrice) >= 0.01) return false;
+    return (await redis.getdel<string>(key)) !== null;
   });
 }

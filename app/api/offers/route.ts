@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, reserveOffer, getDailyUsage, refundOffer, setPendingCounter } from "@/lib/rate-limit";
 import { getProductPricing, evaluateOffer } from "@/lib/pricing";
-import { stripGid, getTrustedShopDomain } from "@/lib/shopify";
+import { stripGid, getAppProxyAuth } from "@/lib/shopify";
 import { createDiscountCode } from "@/lib/discount";
 import { RedisUnavailableError } from "@/lib/redis";
 
 // GET — check customer's daily quota status
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const customerId = searchParams.get("customerId");
-    const productId = searchParams.get("productId");
-
-    if (!customerId) {
+    const auth = getAppProxyAuth(new URL(request.url).searchParams);
+    if (!auth) {
       return NextResponse.json(
-        { action: "ERROR", message: "customerId fehlt." },
-        { status: 400 }
+        { action: "ERROR", message: "Nicht authentifiziert." },
+        { status: 401 }
       );
     }
+
+    const { searchParams } = new URL(request.url);
+    const customerId = auth.customerId;
+    const productId = searchParams.get("productId");
 
     const usage = await getDailyUsage(customerId);
 
@@ -44,9 +45,20 @@ export async function GET(request: NextRequest) {
 
 // POST — submit an offer
 export async function POST(request: NextRequest) {
+  let reservation: { customerId: string; productId: string } | null = null;
+
   try {
+    const auth = getAppProxyAuth(new URL(request.url).searchParams);
+    if (!auth) {
+      return NextResponse.json(
+        { action: "ERROR", message: "Nicht authentifiziert." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
-    const { customerId, amount, shopDomain } = body;
+    const { amount } = body;
+    const { customerId, shopDomain } = auth;
     let { productId, variantId } = body;
 
     // Strip Shopify GID prefixes (e.g. "gid://shopify/Product/12345" → "12345")
@@ -64,8 +76,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const offerAmount = parseFloat(String(amount));
-    if (isNaN(offerAmount) || offerAmount <= 0) {
+    const rawAmount = typeof amount === "number" || typeof amount === "string"
+      ? Number(amount)
+      : NaN;
+    if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
       return NextResponse.json(
         {
           action: "ERROR",
@@ -74,15 +88,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const offerAmount = Math.round(rawAmount * 100) / 100;
 
-    // Never let client-supplied shopDomain point our Admin API token elsewhere
-    const trustedDomain = getTrustedShopDomain(shopDomain);
-    if (!trustedDomain) {
-      return NextResponse.json(
-        { action: "ERROR", message: "Ungültige Shop-Domain." },
-        { status: 400 }
-      );
-    }
+    const trustedDomain = shopDomain;
 
     // 1. Atomically reserve quota (SET NX per product + incr daily — no TOCTOU race)
     const rateCheck = await reserveOffer(customerId, productId);
@@ -95,27 +103,21 @@ export async function POST(request: NextRequest) {
         remaining: rateCheck.remaining,
       });
     }
+    reservation = { customerId, productId };
 
     // 2. Build pricing using shared logic in lib/pricing.ts
-    const widgetSalePrice = body.salePrice ? parseFloat(String(body.salePrice)) : 0;
-    const widgetCompareAtPrice = body.compareAtPrice ? parseFloat(String(body.compareAtPrice)) : 0;
-
-    const pricing = await getProductPricing(
-      productId,
-      variantId,
-      trustedDomain,
-      widgetSalePrice,
-      widgetCompareAtPrice
-    );
+    const pricing = await getProductPricing(productId, variantId, trustedDomain);
 
     // 3. Evaluate offer against rules
-    // Out of stock → ERROR (not DECLINE) so widget shows inline message without
-    // incrementing quota visually; server already refunded the reserved slot.
+    // Out of stock → DECLINE, but refund the reservation because no offer was
+    // actually evaluated. The widget keeps the product retryable.
     if (!pricing.availableForSale) {
       await refundOffer(customerId, productId, true);
+      reservation = null;
       return NextResponse.json({
-        action: "ERROR",
+        action: "DECLINE",
         message: "Dieser Artikel ist leider ausverkauft.",
+        quotaRefunded: true,
       });
     }
 
@@ -136,7 +138,12 @@ export async function POST(request: NextRequest) {
     // For counter offers, include counter price + store pending counter (bug 10)
     if (evaluation.action === "COUNTER") {
       response.counterPrice = evaluation.counterPrice;
-      await setPendingCounter(customerId, productId, evaluation.counterPrice!);
+      const pendingSaved = await setPendingCounter(
+        customerId,
+        productId,
+        evaluation.counterPrice!
+      );
+      if (!pendingSaved) throw new RedisUnavailableError();
     }
 
     // For ACCEPT (with code), generate discount code
@@ -172,6 +179,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error("[Archive54] Offer error:", error);
+    if (reservation) {
+      await refundOffer(reservation.customerId, reservation.productId, true);
+      reservation = null;
+    }
     if (error instanceof RedisUnavailableError) {
       return NextResponse.json(
         {
@@ -191,5 +202,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

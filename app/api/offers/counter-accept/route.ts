@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripGid, getTrustedShopDomain } from "@/lib/shopify";
+import { stripGid, getAppProxyAuth } from "@/lib/shopify";
 import { createDiscountCode } from "@/lib/discount";
 import { refundOffer, consumePendingCounter, setPendingCounter } from "@/lib/rate-limit";
 import { getProductPricing } from "@/lib/pricing";
@@ -7,8 +7,17 @@ import { RedisUnavailableError } from "@/lib/redis";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = getAppProxyAuth(new URL(request.url).searchParams);
+    if (!auth) {
+      return NextResponse.json(
+        { action: "ERROR", message: "Nicht authentifiziert." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
-    const { customerId, counterPrice, shopDomain } = body;
+    const { counterPrice } = body;
+    const { customerId, shopDomain } = auth;
     let { productId, variantId } = body;
 
     productId = stripGid(productId);
@@ -21,7 +30,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const price = typeof counterPrice === "string" ? parseFloat(counterPrice) : counterPrice;
+    const rawPrice = typeof counterPrice === "number" || typeof counterPrice === "string"
+      ? Number(counterPrice)
+      : NaN;
+    const price = Number.isFinite(rawPrice) ? Math.round(rawPrice * 100) / 100 : NaN;
     if (!Number.isFinite(price) || price <= 0) {
       return NextResponse.json(
         { action: "ERROR", message: "Ungültiger Betrag." },
@@ -29,19 +41,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Never let client-supplied shopDomain point our Admin API token elsewhere
-    const trustedDomain = getTrustedShopDomain(shopDomain);
-    if (!trustedDomain) {
-      return NextResponse.json(
-        { action: "ERROR", message: "Ungültige Shop-Domain." },
-        { status: 400 }
-      );
-    }
+    const trustedDomain = shopDomain;
 
     const pricing = await getProductPricing(productId, variantId, trustedDomain);
     if (!pricing.availableForSale) {
       return NextResponse.json(
         { action: "ERROR", message: "Dieser Artikel ist leider ausverkauft." },
+        { status: 400 }
+      );
+    }
+
+    if (Math.abs(price - pricing.counterPrice) >= 0.01) {
+      return NextResponse.json(
+        { action: "ERROR", message: "Das Gegenangebot ist nicht mehr gültig." },
         { status: 400 }
       );
     }

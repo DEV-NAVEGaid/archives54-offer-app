@@ -5,8 +5,9 @@ const PRICING_CACHE_TTL = 300;
 export interface ProductPricing {
   uvp: number; // Compare-at price (regular price before discount)
   salePrice: number; // Listed sale price (54% off UVP)
-  floorPrice: number; // Minimum acceptable (60% off UVP or metafield)
-  counterPrice: number; // Counter offer (~57% off UVP)
+  floorPrice: number; // Minimum offer level (60% off UVP)
+  counterTriggerPrice: number; // Minimum offer that gets a counter (85% of floor)
+  counterPrice: number; // Counter offer midpoint between sale and floor
   variantId: string;
   metafieldOverride: boolean;
   availableForSale: boolean;
@@ -83,21 +84,16 @@ async function fetchVariant(
 export async function getProductPricing(
   productId: string,
   variantId: string,
-  shopDomain: string,
-  widgetSalePrice?: number,
-  widgetCompareAtPrice?: number
+  shopDomain: string
 ): Promise<ProductPricing> {
 
   const accessToken = process.env.SHOPIFY_ACCESS_TOKEN;
   if (!accessToken) throw new Error("SHOPIFY_ACCESS_TOKEN not set");
 
-  const cacheKey = `pricing:${productId}:${variantId}`;
+  // Version the key so old random-floor quotes do not survive this rule change.
+  const cacheKey = `pricing:v4:${productId}:${variantId}`;
   // ponytail: cache is optional — read/write failures are swallowed, pricing
-  // works without Redis. The random floor is frozen per cache window, which
-  // makes quotes consistent within those 5 minutes. Availability is always
-  // refreshed on a hit (inventory changes between cache write and now) — the
-  // 1 product fetch is still cheaper than the 2 calls (product + metafield)
-  // on a miss.
+  // works without Redis. Availability is always refreshed on a hit.
   try {
     const cached = await redis.get<string>(cacheKey);
     if (cached) {
@@ -120,8 +116,8 @@ export async function getProductPricing(
   const variant = await fetchVariant(productId, variantId, shopDomain, accessToken);
   const availableForSale = computeAvailability(variant);
 
-  const rawPrice = parseFloat(variant.price);
-  const rawCompare = parseFloat(variant.compare_at_price ?? "");
+  const rawPrice = Number(variant.price);
+  const rawCompare = Number(variant.compare_at_price ?? "");
   if (!Number.isFinite(rawPrice) || rawPrice <= 0) {
     throw new Error(`Variant ${variantId} has no valid price (price=${variant.price}) — set the price in Shopify admin`);
   }
@@ -129,43 +125,38 @@ export async function getProductPricing(
   const salePrice = round2(rawPrice);
   const uvp = Number.isFinite(rawCompare) && rawCompare > rawPrice ? round2(rawCompare) : salePrice;
 
-  // Check metafield override for accept price (variant level)
-  let acceptPrice: number;
+  let floorPrice = round2(uvp * 0.40);
   let metafieldOverride = false;
-  if (accessToken) {
-    const metafield = await getVariantMetafield(
-      variantId, "archive54", "min_price", shopDomain, accessToken
-    );
-    // else "0.5" or garbage would make floor ~0 → every offer accepted
-    const metaValue = metafield ? parseFloat(metafield.value) : NaN;
-    if (Number.isFinite(metaValue) && metaValue > 0 && metaValue <= salePrice) {
-      acceptPrice = round2(metaValue);
+  const metafield = await getVariantMetafield(
+    variantId,
+    "archive54",
+    "min_price",
+    shopDomain,
+    accessToken
+  );
+  if (metafield) {
+    const configuredFloor = Number(metafield.value);
+    if (Number.isFinite(configuredFloor) && configuredFloor > 0 && configuredFloor <= salePrice) {
+      floorPrice = round2(configuredFloor);
       metafieldOverride = true;
     } else {
-      if (metafield) console.warn(`[Archive54] Ignoring invalid metafield min_price=${metafield.value} for variant ${variantId}`);
-      // Default: Random between 54% and 60% off UVP
-      const randomDiscount = 0.54 + Math.random() * (0.60 - 0.54);
-      acceptPrice = round2(uvp * (1 - randomDiscount));
+      console.warn(
+        `[Archive54] Ignoring invalid metafield min_price=${metafield.value} for variant ${variantId}`
+      );
     }
-  } else {
-    const randomDiscount = 0.54 + Math.random() * (0.60 - 0.54);
-    acceptPrice = round2(uvp * (1 - randomDiscount));
   }
 
-  // A generated floor must stay below sale price. An explicit min_price equal
-  // to sale price is intentional and is handled as ACCEPT_NO_CODE.
-  if (acceptPrice > salePrice) {
-    acceptPrice = round2(salePrice * 0.99);
-  }
-
-  // Minimum offer to trigger a counter (e.g., 15% below accept price)
-  const counterTriggerPrice = round2(acceptPrice * 0.85);
+  // Shopify's listed sale price is the authoritative 54%-off point. The
+  // counter is the midpoint between that price and the configured floor.
+  const counterPrice = Math.min(round2((salePrice + floorPrice) / 2), salePrice);
+  const counterTriggerPrice = round2(floorPrice * 0.85);
 
   const pricing: ProductPricing = {
     uvp,
     salePrice,
-    floorPrice: acceptPrice, // Renamed in interface conceptually, keeping floorPrice for compat
-    counterPrice: counterTriggerPrice,
+    floorPrice,
+    counterTriggerPrice,
+    counterPrice,
     variantId,
     metafieldOverride,
     availableForSale,
@@ -180,7 +171,6 @@ export async function getProductPricing(
   return pricing;
 }
 
-// Get metafield from Shopify (variant level)
 async function getVariantMetafield(
   variantId: string,
   namespace: string,
@@ -244,18 +234,18 @@ export function evaluateOffer(
     };
   }
 
-  // Scenario 3: Offer >= counterPrice but < floor → Counter with Accept Price
-  if (amt >= pricing.counterPrice) {
+  // Scenario 3: Offer ≥ Counter Trigger but below the floor → Counter
+  if (amt >= pricing.counterTriggerPrice) {
     return {
       result: "counter",
       action: "COUNTER",
-      message: `Wie wäre es mit ${fmtEUR(pricing.floorPrice)}? Das ist unser Mindestpreis.`,
+      message: `Wie wäre es mit ${fmtEUR(pricing.counterPrice)}?`,
       finalPrice: amt,
-      counterPrice: pricing.floorPrice,
+      counterPrice: pricing.counterPrice,
     };
   }
 
-  // Scenario 4: Offer < counter price → Decline
+  // Scenario 4: Offer below the floor → Decline
   return {
     result: "decline",
     action: "DECLINE",

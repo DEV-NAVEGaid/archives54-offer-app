@@ -306,7 +306,6 @@
   var A54_PRODUCT_ID = '{{ product.id }}';
 var A54_PRODUCT_AVAILABLE = {{ product.available | json }};
   var A54_SALE_PRICE = {{ product.price | divided_by: 100.0 | round: 2 }};
-  var A54_META_FLOOR = '{{ product.metafields.archive54.min_price }}';
   
   var A54_VARIANTS = {
     {% for variant in product.variants %}
@@ -592,6 +591,12 @@ var A54_PRODUCT_AVAILABLE = {{ product.available | json }};
         } else if (data.action === 'ERROR') {
           // Server error (e.g. Redis/system unavailable) — show inline, no quota change
           a54ShowFormError(blockId, data.message || 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+        } else if (data.action === 'DECLINE' && data.quotaRefunded) {
+           // OOS declines refund the server reservation and remain retryable.
+           a54ClearSavedState();
+           a54ShowModalState(blockId, 'offer-declined');
+          var oosMsg = document.getElementById('declined-msg-'+blockId);
+          if (oosMsg) oosMsg.textContent = data.message || 'Dieser Artikel ist leider ausverkauft.';
         } else {
           // Sync UI quota dots visually
           a54IncrementQuota();
@@ -713,7 +718,7 @@ var A54_PRODUCT_AVAILABLE = {{ product.available | json }};
       } else {
         // Ghost counter: pending already consumed server-side — don't let this
         // modal reopen on every refresh
-        if (data.message === 'Kein aktives Gegenangebot vorhanden.') {
+        if (data.message === 'Kein aktives Gegenangebot vorhanden.' || data.message === 'Das Gegenangebot ist nicht mehr gültig.') {
           window._a54ModalState = null; // close must NOT trigger decline
           a54ClearSavedState();
           a54CloseModal(blockId);

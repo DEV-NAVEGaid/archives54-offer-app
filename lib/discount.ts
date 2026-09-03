@@ -131,15 +131,23 @@ export async function createDiscountCode(params: {
       return null;
     }
 
-    console.log(`[Archive54] Discount code created via GraphQL: ${code} for product ${productId}, expires in ${EXPIRY_MINUTES}min`);
+    const createdCode =
+      data.data?.discountCodeBasicCreate?.codeDiscountNode?.codeDiscount?.codes
+        ?.edges?.[0]?.node?.code;
+    if (!createdCode) {
+      console.error("[Archive54] Discount creation returned no code");
+      return null;
+    }
+
+    console.log(`[Archive54] Discount code created via GraphQL: ${createdCode} for product ${productId}, expires in ${EXPIRY_MINUTES}min`);
 
     // 2. Store in Redis for server-side validation — best effort: Shopify
     // enforces expiry/usage/customer at checkout even if Redis is down
     try {
       await redis.set(
-        `discount:${code}`,
+        `discount:${createdCode}`,
         JSON.stringify({
-          code,
+          code: createdCode,
           productId,
           variantId,
           finalPrice,
@@ -153,7 +161,7 @@ export async function createDiscountCode(params: {
       console.error("[Archive54] Redis unavailable — code only stored in Shopify:", e);
     }
 
-    return { code, expiresIn };
+    return { code: createdCode, expiresIn };
   } catch (e) {
     console.error("[Archive54] Discount creation error:", e);
     return null;
