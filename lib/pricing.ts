@@ -138,7 +138,7 @@ export async function getProductPricing(
     );
     // else "0.5" or garbage would make floor ~0 → every offer accepted
     const metaValue = metafield ? parseFloat(metafield.value) : NaN;
-    if (Number.isFinite(metaValue) && metaValue > 0 && metaValue < salePrice) {
+    if (Number.isFinite(metaValue) && metaValue > 0 && metaValue <= salePrice) {
       acceptPrice = round2(metaValue);
       metafieldOverride = true;
     } else {
@@ -152,9 +152,9 @@ export async function getProductPricing(
     acceptPrice = round2(uvp * (1 - randomDiscount));
   }
 
-  // Sale price can be deeper than the max 60%-off floor — never quote a
-  // counter/accept price at or above what the customer can already buy for
-  if (acceptPrice >= salePrice) {
+  // A generated floor must stay below sale price. An explicit min_price equal
+  // to sale price is intentional and is handled as ACCEPT_NO_CODE.
+  if (acceptPrice > salePrice) {
     acceptPrice = round2(salePrice * 0.99);
   }
 

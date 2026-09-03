@@ -39,28 +39,9 @@ export async function POST(request: NextRequest) {
     }
 
     const pricing = await getProductPricing(productId, variantId, trustedDomain);
-    const minFloor = pricing.metafieldOverride
-      ? pricing.floorPrice
-      : Math.round(pricing.uvp * 0.40 * 100) / 100;
-    if (price < minFloor) {
-      return NextResponse.json(
-        { action: "ERROR", message: "Angebot liegt unter dem Mindestpreis." },
-        { status: 400 }
-      );
-    }
-
     if (!pricing.availableForSale) {
       return NextResponse.json(
         { action: "ERROR", message: "Dieser Artikel ist leider ausverkauft." },
-        { status: 400 }
-      );
-    }
-
-    // A price at/above the sale price can never get a discount code — client
-    // should just buy at the listed sale price (guard BEFORE consuming pending)
-    if (price >= pricing.salePrice) {
-      return NextResponse.json(
-        { action: "ERROR", message: "Kaufen Sie direkt zum Sale-Preis — er ist bereits besser." },
         { status: 400 }
       );
     }
@@ -73,6 +54,18 @@ export async function POST(request: NextRequest) {
         { action: "ERROR", message: "Kein aktives Gegenangebot vorhanden." },
         { status: 400 }
       );
+    }
+
+    // A counter at the listed price needs no discount code, but is still a
+    // valid accepted counter and must consume the pending offer.
+    if (price >= pricing.salePrice) {
+      await refundOffer(customerId, productId);
+      return NextResponse.json({
+        action: "ACCEPT_NO_CODE",
+        finalPrice: pricing.salePrice,
+        expiresIn: 30 * 60,
+        message: "Gegenangebot angenommen. Kaufen Sie direkt zum Sale-Preis.",
+      });
     }
 
     // Generate discount code via centralized library

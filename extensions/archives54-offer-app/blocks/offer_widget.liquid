@@ -699,7 +699,7 @@ var A54_PRODUCT_AVAILABLE = {{ product.available | json }};
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-      if (data.action === 'ACCEPT' && data.discountCode) {
+      if ((data.action === 'ACCEPT' && data.discountCode) || data.action === 'ACCEPT_NO_CODE') {
         // Visual refund of the quota since it's free
         a54DecrementQuota();
         a54UpdateAllWidgets();
@@ -708,8 +708,8 @@ var A54_PRODUCT_AVAILABLE = {{ product.available | json }};
         a54CloseModal(blockId);
         var expiresIn = data.expiresIn || 30*60;
         var expiresAt = Date.now() + expiresIn * 1000;
-        a54SaveState('accepted', { amountStr: a54Fmt(counterPrice), discountCode: data.discountCode, expiresAt: expiresAt });
-        a54StartAccepted(blockId, a54Fmt(counterPrice), expiresIn, false, data.discountCode);
+        a54SaveState('accepted', { amountStr: a54Fmt(data.finalPrice || counterPrice), discountCode: data.discountCode || '', expiresAt: expiresAt });
+        a54StartAccepted(blockId, a54Fmt(data.finalPrice || counterPrice), expiresIn, !data.discountCode, data.discountCode || '');
       } else {
         // Ghost counter: pending already consumed server-side — don't let this
         // modal reopen on every refresh
