@@ -3,9 +3,8 @@
 
   var OFFER_URL = '/apps/archives54-offer-app/offers';
   var COUNTER_URL = '/apps/archives54-offer-app/offers/counter-accept';
+  var STATE_URL = '/apps/archives54-offer-app/offers/state';
   var MODAL_CONTENT_ID = 'quick-add-modal-content';
-  var counterTimer = null;
-
   function waitForModalContent() {
     return new Promise(function (resolve, reject) {
       var attempts = 0;
@@ -39,6 +38,10 @@
     messageEl.dataset.tone = tone || 'normal';
   }
 
+  function removeOfferForm(panel) {
+    panel.querySelector('[data-a54-offer-form]')?.remove();
+  }
+
   function panelShell() {
     var panel = document.createElement('section');
     panel.className = 'a54-quick-bid-panel';
@@ -66,23 +69,7 @@
     });
   }
 
-  function showAccepted(panel, data) {
-    var result = panel.querySelector('[data-a54-result]');
-    var code = data.discountCode
-      ? '<div class="a54-quick-bid-code">' + data.discountCode + '</div>'
-      : '<div class="a54-quick-bid-no-code">Kein Rabattcode erforderlich.</div>';
-    panel.querySelector('[data-a54-offer-form]')?.remove();
-    setPanelMessage(panel, data.message || 'Ihr Angebot wurde akzeptiert!', 'success');
-    if (result) result.innerHTML = code + '<small>Gültig für 30 Minuten.</small>';
-  }
-
-  function stopCounterTimer() {
-    if (counterTimer) window.clearInterval(counterTimer);
-    counterTimer = null;
-  }
-
   function showCounter(panel, data) {
-    stopCounterTimer();
     var price = Number(data.counterPrice);
     panel.dataset.counterPrice = price.toFixed(2);
     var result = panel.querySelector('[data-a54-result]');
@@ -91,37 +78,142 @@
     if (!result) return;
     result.innerHTML = [
       '<strong>Unser Angebot: ', formatEUR(price), '</strong>',
-      '<button type="button" class="a54-quick-bid-submit" data-a54-counter-accept>ANGEBOT ANNEHMEN</button>',
-      '<small data-a54-counter-timer>30:00 gültig</small>'
+      '<button type="button" class="a54-quick-bid-submit" data-a54-counter-accept>ANGEBOT ANNEHMEN</button>'
     ].join('');
-    var expiresAt = Date.now() + 30 * 60 * 1000;
-    var timer = result.querySelector('[data-a54-counter-timer]');
-    counterTimer = window.setInterval(function () {
-      var seconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
-      if (timer) timer.textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0') + ' gültig';
-      if (!seconds) {
-        stopCounterTimer();
-        var accept = result.querySelector('[data-a54-counter-accept]');
-        if (accept) accept.disabled = true;
-        setPanelMessage(panel, 'Das Gegenangebot ist abgelaufen.', 'error');
-      }
-    }, 1000);
   }
 
   function formatEUR(value) {
     return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
   }
 
-  function showResponse(panel, data) {
+  async function showResponse(panel, data) {
     if (data.action === 'ACCEPT' || data.action === 'ACCEPT_NO_CODE') {
-      showAccepted(panel, data);
+      await showAccepted(panel, data);
       return;
     }
     if (data.action === 'COUNTER') {
+      await saveState(panel, 'counter', {
+        amountStr: panel.dataset.offerAmount || '',
+        counterPrice: data.counterPrice,
+        message: data.message,
+        expiresAt: Date.now() + 30 * 60 * 1000
+      });
       showCounter(panel, data);
       return;
     }
+    if (data.action === 'DECLINE') {
+      removeOfferForm(panel);
+      await saveState(panel, 'declined', { amountStr: panel.dataset.offerAmount || '' });
+    }
     setPanelMessage(panel, data.message || 'Das Angebot konnte nicht angenommen werden.', 'error');
+  }
+
+  async function saveState(panel, state, data) {
+    var customerId = panel.dataset.customerId;
+    if (!customerId) return;
+    try {
+      await fetch(STATE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: customerId,
+          productId: panel.dataset.productId,
+          state: state,
+          data: data || {}
+        })
+      });
+    } catch {
+      // Offer enforcement is server-side; state persistence is best effort.
+    }
+  }
+
+  async function loadState(button) {
+    var customerId = button.dataset.customerId;
+    if (!customerId) return null;
+    try {
+      var response = await fetch(
+        STATE_URL + '?customerId=' + encodeURIComponent(customerId) +
+        '&productId=' + encodeURIComponent(button.dataset.productId)
+      );
+      if (!response.ok) return null;
+      return await response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  function showSavedState(panel, saved) {
+    var data = saved.data || {};
+    removeOfferForm(panel);
+    if (saved.state === 'counter' && data.counterPrice) {
+      showCounter(panel, data);
+      return;
+    }
+    var result = panel.querySelector('[data-a54-result]');
+    if (saved.state === 'accepted' && data.discountCode) {
+      setPanelMessage(panel, 'Ihr Angebot wurde bereits akzeptiert.', 'success');
+      if (result) result.innerHTML = '<div class="a54-quick-bid-code">' + data.discountCode + '</div>';
+      return;
+    }
+    if (saved.state === 'accepted_no_code') {
+      setPanelMessage(panel, 'Ihr Angebot wurde bereits akzeptiert. Sie können direkt zum Sale-Preis kaufen.', 'success');
+      return;
+    }
+    setPanelMessage(panel, data.message || 'Sie haben bereits ein Angebot für dieses Produkt abgegeben.', 'error');
+  }
+
+  function readCartQuantity(panel) {
+    var content = panel.closest('#' + MODAL_CONTENT_ID);
+    var input = content && content.querySelector('input[name="quantity"]');
+    var minimum = input && Number(input.min) > 0 ? Number(input.min) : 1;
+    var maximum = input && Number(input.max) > 0 ? Number(input.max) : Infinity;
+    var value = input ? Number(input.value) : minimum;
+    if (!Number.isFinite(value)) value = minimum;
+    return Math.min(maximum, Math.max(minimum, Math.floor(value)));
+  }
+
+  function readNumericVariantId(value) {
+    var match = String(value || '').match(/(\d+)$/);
+    return match ? Number(match[1]) : NaN;
+  }
+
+  async function addAcceptedToCart(panel, data) {
+    var variantId = readNumericVariantId(panel.dataset.variantId);
+    if (!Number.isSafeInteger(variantId) || variantId <= 0) {
+      setPanelMessage(panel, 'Die ausgewählte Variante ist nicht verfügbar.', 'error');
+      return;
+    }
+    setPanelMessage(panel, 'Wird in den Warenkorb gelegt...', 'normal');
+    try {
+      var response = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [{ id: variantId, quantity: readCartQuantity(panel) }] })
+      });
+      if (!response.ok) throw new Error('Cart add failed');
+      var cartUrl = data.discountCode
+        ? '/discount/' + encodeURIComponent(data.discountCode) + '?redirect=' + encodeURIComponent('/cart')
+        : '/cart';
+      window.location.assign(cartUrl);
+    } catch {
+      setPanelMessage(panel, 'Der Artikel konnte nicht in den Warenkorb gelegt werden.', 'error');
+    }
+  }
+
+  async function showAccepted(panel, data) {
+    var result = panel.querySelector('[data-a54-result]');
+    var code = data.discountCode
+      ? '<div class="a54-quick-bid-code">' + data.discountCode + '</div>'
+      : '<div class="a54-quick-bid-no-code">Kein Rabattcode erforderlich.</div>';
+    removeOfferForm(panel);
+    setPanelMessage(panel, data.message || 'Ihr Angebot wurde akzeptiert!', 'success');
+    if (result) result.innerHTML = code;
+    await saveState(panel, data.discountCode ? 'accepted' : 'accepted_no_code', {
+      amountStr: panel.dataset.offerAmount || '',
+      discountCode: data.discountCode || '',
+      expiresAt: Date.now() + 30 * 60 * 1000
+    });
+    await addAcceptedToCart(panel, data);
   }
 
   async function submitOffer(panel, input) {
@@ -131,6 +223,7 @@
       setPanelMessage(panel, 'Bitte geben Sie ein gültiges Angebot ein.', 'error');
       return;
     }
+    panel.dataset.offerAmount = amount.toFixed(2);
     var submit = panel.querySelector('[type="submit"]');
     if (submit) submit.disabled = true;
     try {
@@ -139,7 +232,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: panel.dataset.productId, variantId: variantId, amount: amount })
       });
-      showResponse(panel, await response.json());
+      await showResponse(panel, await response.json());
     } catch {
       setPanelMessage(panel, 'Verbindung fehlgeschlagen. Bitte versuchen Sie es erneut.', 'error');
     } finally {
@@ -159,7 +252,7 @@
           counterPrice: panel.dataset.counterPrice
         })
       });
-      showResponse(panel, await response.json());
+      await showResponse(panel, await response.json());
     } catch {
       setPanelMessage(panel, 'Verbindung fehlgeschlagen. Bitte versuchen Sie es erneut.', 'error');
       button.disabled = false;
@@ -195,11 +288,11 @@
     try {
       await quickAdd.handleClick(event);
       var content = await waitForModalContent();
-      stopCounterTimer();
       content.querySelector('[data-a54-quick-bid-panel]')?.remove();
       var panel = panelShell();
       panel.dataset.productId = button.dataset.productId;
       panel.dataset.variantId = readVariantId(content, button.dataset.variantId);
+      if (button.dataset.customerId) panel.dataset.customerId = button.dataset.customerId;
       var productDetails = content.querySelector('.product-details');
       var offerHost = productDetails || content;
       panel.style.setProperty('display', 'block', 'important');
@@ -215,6 +308,8 @@
         offerHost.append(panel);
       }
       bindPanel(panel, content);
+      var saved = await loadState(button);
+      if (saved && saved.state) showSavedState(panel, saved);
     } catch (error) {
       console.error('[Archive54] Quick Bid modal error:', error);
     } finally {

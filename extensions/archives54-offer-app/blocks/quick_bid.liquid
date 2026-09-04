@@ -6,6 +6,7 @@
     data-a54-quick-bid
     data-product-id="{{ quick_bid_product.id }}"
     data-variant-id="{{ quick_bid_product.selected_or_first_available_variant.id }}"
+    data-customer-id="{{ customer.id }}"
     style="--a54-quick-bid-bg: {{ block.settings.background_color }}; --a54-quick-bid-color: {{ block.settings.text_color }};">
     {{ block.settings.label | escape }}
   </button>
