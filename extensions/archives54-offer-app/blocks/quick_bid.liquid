@@ -1,0 +1,46 @@
+{% assign quick_bid_product = closest.product | default: product %}
+{% if quick_bid_product != blank %}
+  <button
+    type="button"
+    class="a54-quick-bid-button"
+    data-a54-quick-bid
+    data-product-id="{{ quick_bid_product.id }}"
+    data-variant-id="{{ quick_bid_product.selected_or_first_available_variant.id }}"
+    style="--a54-quick-bid-bg: {{ block.settings.background_color }}; --a54-quick-bid-color: {{ block.settings.text_color }};">
+    {{ block.settings.label | escape }}
+  </button>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Quick Bid button",
+  "target": "block",
+  "javascript": "quick-bid.js",
+  "stylesheet": "quick-bid.css",
+  "settings": [
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Button label",
+      "default": "ANGEBOT MACHEN"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#C9A96E"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#0A0A0A"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Quick Bid button"
+    }
+  ]
+}
+{% endschema %}
