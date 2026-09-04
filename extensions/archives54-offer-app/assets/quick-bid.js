@@ -43,11 +43,7 @@
     var panel = document.createElement('section');
     panel.className = 'a54-quick-bid-panel';
     panel.dataset.a54QuickBidPanel = 'true';
-    panel.innerHTML = [
-      '<button type="button" class="a54-quick-bid-modal-trigger" data-a54-open-offer>ANGEBOT MACHEN</button>',
-      '<div class="a54-quick-bid-message" data-a54-message role="status"></div>',
-      '<div class="a54-quick-bid-result" data-a54-result></div>'
-    ].join('');
+    showForm(panel);
     return panel;
   }
 
@@ -172,11 +168,6 @@
 
   function bindPanel(panel, content) {
     panel.addEventListener('click', function (event) {
-      var launch = event.target.closest('[data-a54-open-offer]');
-      if (launch) {
-        showForm(panel);
-        return;
-      }
       var button = event.target.closest('[data-a54-counter-accept]');
       if (button) acceptCounter(panel, button);
     });
@@ -218,6 +209,7 @@
       }
       var cartBlock = productDetails && productDetails.querySelector('.buy-buttons-block');
       if (cartBlock && cartBlock.parentElement) {
+        cartBlock.classList.add('a54-quick-bid-cart-hidden');
         cartBlock.parentElement.insertBefore(panel, cartBlock.nextSibling);
       } else {
         offerHost.append(panel);
