@@ -1,4 +1,10 @@
 .a54-quick-bid-button {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   margin-top: 8px;
   padding: 12px 16px;
@@ -18,10 +24,24 @@
 }
 
 .a54-quick-bid-panel {
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   margin-top: 20px;
   padding: 16px;
   border: 1px solid #c9a96e;
   background: rgba(201, 169, 110, .06);
+}
+
+.quick-add-modal__content > .a54-quick-bid-panel {
+  grid-column: 1 / -1;
+  grid-row: auto;
 }
 
 .a54-quick-bid-heading {
@@ -29,6 +49,25 @@
   color: #1a1a1a;
   font-size: 14px;
   font-weight: 700;
+}
+
+.a54-quick-bid-modal-trigger {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  background: #c9a96e;
+  color: #0a0a0a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.a54-quick-bid-modal-trigger:hover {
+  background: #d4b87d;
 }
 
 .a54-quick-bid-label,
@@ -46,6 +85,7 @@
 
 .a54-quick-bid-row input {
   min-width: 0;
+  box-sizing: border-box;
   flex: 1;
   padding: 10px;
   border: 1px solid #d8d8d8;
@@ -53,6 +93,8 @@
 }
 
 .a54-quick-bid-submit {
+  box-sizing: border-box;
+  max-width: 100%;
   padding: 10px 12px;
   border: 0;
   background: #1a1a1a;
@@ -60,6 +102,7 @@
   cursor: pointer;
   font-size: 11px;
   letter-spacing: .8px;
+  white-space: nowrap;
 }
 
 .a54-quick-bid-submit:disabled {

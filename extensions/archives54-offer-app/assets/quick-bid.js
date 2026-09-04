@@ -44,6 +44,15 @@
     panel.className = 'a54-quick-bid-panel';
     panel.dataset.a54QuickBidPanel = 'true';
     panel.innerHTML = [
+      '<button type="button" class="a54-quick-bid-modal-trigger" data-a54-open-offer>ANGEBOT MACHEN</button>',
+      '<div class="a54-quick-bid-message" data-a54-message role="status"></div>',
+      '<div class="a54-quick-bid-result" data-a54-result></div>'
+    ].join('');
+    return panel;
+  }
+
+  function showForm(panel) {
+    panel.innerHTML = [
       '<div class="a54-quick-bid-heading">Preis verhandeln</div>',
       '<form data-a54-offer-form>',
       '<label class="a54-quick-bid-label">Ihr Angebot</label>',
@@ -55,7 +64,10 @@
       '<div class="a54-quick-bid-message" data-a54-message role="status"></div>',
       '<div class="a54-quick-bid-result" data-a54-result></div>'
     ].join('');
-    return panel;
+    panel.querySelector('[data-a54-offer-form]').addEventListener('submit', function (event) {
+      event.preventDefault();
+      submitOffer(panel, panel.querySelector('[data-a54-offer-input]'));
+    });
   }
 
   function showAccepted(panel, data) {
@@ -159,11 +171,12 @@
   }
 
   function bindPanel(panel, content) {
-    panel.querySelector('[data-a54-offer-form]').addEventListener('submit', function (event) {
-      event.preventDefault();
-      submitOffer(panel, panel.querySelector('[data-a54-offer-input]'));
-    });
     panel.addEventListener('click', function (event) {
+      var launch = event.target.closest('[data-a54-open-offer]');
+      if (launch) {
+        showForm(panel);
+        return;
+      }
       var button = event.target.closest('[data-a54-counter-accept]');
       if (button) acceptCounter(panel, button);
     });
@@ -191,11 +204,24 @@
     try {
       await quickAdd.handleClick(event);
       var content = await waitForModalContent();
+      stopCounterTimer();
       content.querySelector('[data-a54-quick-bid-panel]')?.remove();
       var panel = panelShell();
       panel.dataset.productId = button.dataset.productId;
       panel.dataset.variantId = readVariantId(content, button.dataset.variantId);
-      content.append(panel);
+      var productDetails = content.querySelector('.product-details');
+      var offerHost = productDetails || content;
+      panel.style.setProperty('display', 'block', 'important');
+      panel.style.setProperty('min-width', '0', 'important');
+      if (offerHost === content) {
+        panel.style.setProperty('grid-column', '1 / -1', 'important');
+      }
+      var cartBlock = productDetails && productDetails.querySelector('.buy-buttons-block');
+      if (cartBlock && cartBlock.parentElement) {
+        cartBlock.parentElement.insertBefore(panel, cartBlock.nextSibling);
+      } else {
+        offerHost.append(panel);
+      }
       bindPanel(panel, content);
     } catch (error) {
       console.error('[Archive54] Quick Bid modal error:', error);
